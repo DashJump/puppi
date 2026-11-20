@@ -1,3 +1,7 @@
+# Test asset keys. generic-api-key false positives.
+679830d243eae5d5f2f263cc6e019383b32c6856:cli/test/manifest.test.ts:generic-api-key:128
+679830d243eae5d5f2f263cc6e019383b32c6856:sdk/test/collect.test.ts:generic-api-key:24
+
 # Vendor examples in published OpenAPI documents: Apollo example record ids, and Square's example version_token.
 connectors/apollo/openapi.json:generic-api-key:332
 connectors/apollo/openapi.json:generic-api-key:352
