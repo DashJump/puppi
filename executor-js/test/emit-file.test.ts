@@ -10,7 +10,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import Ajv2020 from "ajv/dist/2020.js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { execute, type SettleAttempt } from "../src/execute.js";
 import type { ExecutorEvent, ExecutorInput, ResultEvent } from "../src/protocol.js";

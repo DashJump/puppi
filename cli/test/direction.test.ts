@@ -1,5 +1,5 @@
 import type { Registry } from "@puppi/sdk";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { compile } from "../src/compile.js";
 import { buildManifest, type Manifest } from "../src/manifest.js";

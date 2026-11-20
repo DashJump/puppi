@@ -1,5 +1,5 @@
 import { Client } from "pg";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vite-plus/test";
 
 import { PostgresAdapter } from "../src/index.js";
 

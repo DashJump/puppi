@@ -11,7 +11,7 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import type { ExecutorEvent, ExecutorInput, Lease, OutboundEnvelope } from "../src/protocol.js";
 import { bundleCarryingStorage } from "./support/storage-adapters.js";

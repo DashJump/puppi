@@ -13,27 +13,29 @@
   },
   "type": "module",
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "vp run --filter '!puppi' build",
     "publish:dry-run": "node .github/scripts/publish-packages.mjs --dry-run",
     "publish:packages": "node .github/scripts/publish-packages.mjs",
-    "test": "node --test .github/scripts/publish-packages.test.mjs && pnpm -r test",
-    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r typecheck",
-    "lint": "oxlint --deny-warnings",
-    "lint:types": "oxlint --type-aware --deny-warnings",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
+    "test": "node --test .github/scripts/publish-packages.test.mjs && vp run --filter '!puppi' test",
+    "typecheck": "tsc -p tsconfig.json --noEmit && vp run --filter '!puppi' typecheck",
+    "lint": "vp lint --deny-warnings",
+    "lint:types": "vp lint --type-aware --deny-warnings",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
     "deadcode": "knip --production",
-    "check": "pnpm lint && pnpm lint:types && pnpm format:check && pnpm typecheck"
+    "check": "vp run lint && vp run lint:types && vp run format:check && vp run typecheck"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@babel/plugin-proposal-decorators": "^7.29.7",
+    "@babel/plugin-transform-runtime": "^7.29.7",
+    "@babel/runtime": "^7.29.14",
     "@changesets/cli": "^3.0.3",
+    "@rolldown/plugin-babel": "^0.3.1",
     "@types/node": "^26.6.5",
     "knip": "^6.45.1",
-    "oxfmt": "^0.68.0",
-    "oxlint": "1.83.0",
-    "oxlint-tsgolint": "7.0.2002",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vite-plus": "catalog:"
   },
   "devEngines": {
     "runtime": {

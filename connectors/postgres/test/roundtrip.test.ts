@@ -1,6 +1,6 @@
 import { contentHash, pageIndexRef, pageKeyFor, pageStorageRef } from "@puppi/adapter-storage";
 import type { Row, WriteResult } from "@puppi/sdk";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vite-plus/test";
 
 import { PostgresAdapter } from "../src/index.js";
 

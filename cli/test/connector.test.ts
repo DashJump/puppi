@@ -4,14 +4,14 @@
  */
 
 import { execFile } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { main } from "../src/index.js";
 
@@ -107,13 +107,14 @@ describe("puppi connector new", () => {
     const dir = join(project, "acme");
     const modules = join(dir, "node_modules");
     const bin = join(root, "connectors/http/node_modules/.bin");
+    const vitestBin = join(bundledVitest(join(root, "connectors/http/node_modules")), "vitest.mjs");
 
     link(dir);
 
     // The committed stubs have to pass before generate replaces operations.ts.
     await run(join(bin, "tsc"), ["-p", "tsconfig.json", "--noEmit"], { cwd: dir });
     await run(join(bin, "tsc"), ["-p", "test/tsconfig.json"], { cwd: dir });
-    await run(join(bin, "vitest"), ["run"], { cwd: dir });
+    await run(vitestBin, ["run", "--config", join(root, "vite.config.ts")], { cwd: dir });
 
     mkdirSync(join(modules, ".bin"), { recursive: true });
     symlinkSync(
@@ -130,9 +131,14 @@ describe("puppi connector new", () => {
 
     await run(join(bin, "tsc"), ["-p", "tsconfig.json", "--noEmit"], { cwd: dir });
     await run(join(bin, "tsc"), ["-p", "test/tsconfig.json"], { cwd: dir });
-    await run(join(bin, "vitest"), ["run"], { cwd: dir });
+    await run(vitestBin, ["run", "--config", join(root, "vite.config.ts")], { cwd: dir });
   }, 120_000);
 });
+
+/** Vite+ bundles Vitest. The scaffold still imports `vitest`, so the fixture links that copy. */
+function bundledVitest(donor: string): string {
+  return join(dirname(realpathSync(join(donor, "vite-plus"))), "vitest");
+}
 
 /** The package is not installed. Point its imports at packages this repo already built. */
 function link(dir: string): void {
@@ -146,5 +152,5 @@ function link(dir: string): void {
 
   symlinkSync(join(donor, "@types/node"), join(modules, "@types/node"));
   symlinkSync(join(donor, "typescript"), join(modules, "typescript"));
-  symlinkSync(join(donor, "vitest"), join(modules, "vitest"));
+  symlinkSync(bundledVitest(donor), join(modules, "vitest"));
 }

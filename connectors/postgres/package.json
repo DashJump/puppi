@@ -31,7 +31,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
-    "test": "vitest run"
+    "test": "vp test run --config ../../vite.config.ts"
   },
   "dependencies": {
     "@puppi/adapter-storage": "workspace:*",
@@ -42,7 +42,7 @@
     "@puppi/conformance": "workspace:*",
     "@types/pg": "^8.11.10",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vite-plus": "catalog:"
   },
   "engines": {
     "node": ">=26"

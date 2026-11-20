@@ -6,7 +6,7 @@ import {
 } from "node:http";
 import { createServer as createTcpServer, type Server, type Socket } from "node:net";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   dnsAnswerCount,

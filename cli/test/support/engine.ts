@@ -4,7 +4,7 @@
  * the route key, and the `{ data }` envelope.
  */
 
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 export interface EngineCall {
   method: string;

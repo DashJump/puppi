@@ -4,7 +4,7 @@
  */
 
 import * as Sdk from "@puppi/sdk";
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 let current: typeof Sdk = Sdk;
 

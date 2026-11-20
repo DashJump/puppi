@@ -1,5 +1,5 @@
 import type { Ctx, Declaration } from "@puppi/sdk";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { compile } from "../src/compile.js";
 import { reset, sdk } from "./support/registry.js";

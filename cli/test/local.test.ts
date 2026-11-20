@@ -14,7 +14,7 @@ import { dirname, join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { main } from "../src/index.js";
 import { type EngineCall, stubEngine } from "./support/engine.js";

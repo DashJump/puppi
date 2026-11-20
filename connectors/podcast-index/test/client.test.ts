@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 import { assertConformant, runSourceConformance } from "@puppi/conformance";
 import { HttpStatusError, NotFound } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import * as connector from "../src/index.js";
 import { Client, FEEDS_DUMP_URL } from "../src/index.js";

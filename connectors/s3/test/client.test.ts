@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { isTransient } from "@puppi/sdk";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { Client, type StoreOptions } from "../src/index.js";
 

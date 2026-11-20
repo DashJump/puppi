@@ -5,7 +5,7 @@
  * would make a local run's verdict a lie about what a deploy will do.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { evaluateContract } from "../src/local/contract.js";
 

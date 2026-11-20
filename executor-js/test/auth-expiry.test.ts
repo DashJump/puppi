@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Client as Filesystem } from "@puppi/adapter-filesystem";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { errorEvent, execute } from "../src/execute.js";
 import type { ExecutorEvent, ExecutorInput } from "../src/protocol.js";
