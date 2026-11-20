@@ -1,0 +1,16 @@
+{
+  "environment": "hello",
+  "bindings": {
+    "warehouse": {
+      "config": {
+        "host": { "env": "PUPPI_TEST_PGHOST", "default": "127.0.0.1" },
+        "port": { "env": "PUPPI_TEST_PGPORT", "default": 5432 },
+        "database": "engine_dev"
+      },
+      "secret_refs": { "password": "warehouse_password" }
+    }
+  },
+  "secrets": {
+    "warehouse_password": { "env": "PUPPI_TEST_PGPASSWORD", "default": "postgres" }
+  }
+}

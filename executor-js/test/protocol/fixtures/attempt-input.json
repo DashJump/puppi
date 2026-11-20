@@ -1,0 +1,43 @@
+{
+  "message": "lease",
+  "execution": {
+    "attempt_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "run_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "fence": 1,
+    "runtime_profile": "local-node",
+    "bundle_digest": null,
+    "output_materialization_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "lease_expires_at": null,
+    "deadline_at": null
+  },
+  "input": {
+    "bundle_ref": "/abs/path/to/bundle.js",
+    "sdk_version": "0.2.0",
+    "asset_key": "core/customer",
+    "partition": "",
+    "inputs": {
+      "stripe/customers": {
+        "materialization_id": "11111111-1111-1111-1111-111111111111",
+        "storage_ref": "prod.stripe_customers__aaaa1111"
+      },
+      "hubspot/contacts": {
+        "materialization_id": "22222222-2222-2222-2222-222222222222",
+        "storage_ref": "prod.hubspot_contacts__bbbb2222"
+      }
+    },
+    "checkpoint": null,
+    "cursor_from": null,
+    "latest": null,
+    "bindings": {
+      "warehouse": {
+        "type": "postgres",
+        "config": { "host": "127.0.0.1", "port": 5432, "database": "analytics", "user": "engine" },
+        "secrets": { "password": "REDACTED" },
+        "mode": "live"
+      }
+    },
+    "storage_connection": "warehouse",
+    "connections": {},
+    "output_storage_ref": "prod.core_customer__cccc3333"
+  }
+}

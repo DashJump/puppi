@@ -1,0 +1,47 @@
+{
+  "name": "@puppi/adapter-http",
+  "version": "0.1.1",
+  "description": "Generic JSON-over-HTTP connection: base_url, headers, and an optional bearer token or API key.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "connectors/http"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@puppi/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

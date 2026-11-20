@@ -1,0 +1,9 @@
+# @puppi/adapter-s3
+
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [4ea475e]
+  - @puppi/sdk@0.3.0
+  - @puppi/adapter-storage@0.1.1

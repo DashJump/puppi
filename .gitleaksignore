@@ -1,0 +1,3 @@
+# Test asset keys. generic-api-key false positives.
+679830d243eae5d5f2f263cc6e019383b32c6856:cli/test/manifest.test.ts:generic-api-key:128
+679830d243eae5d5f2f263cc6e019383b32c6856:sdk/test/collect.test.ts:generic-api-key:24

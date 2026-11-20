@@ -1,0 +1,876 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://puppi.dev/schemas/executor-v2.schema.json",
+  "title": "Executor protocol v2",
+  "description": "The executor protocol. One lease envelope in, sequenced event envelopes and one complete envelope out. The lease input and the events are part of this schema.",
+  "$defs": {
+    "storage_ref": {
+      "description": "Opaque to the engine: a table name, path, or snapshot id. The adapter owns its meaning.",
+      "type": "string",
+      "minLength": 1
+    },
+    "partition": {
+      "description": "Partition key. The empty string means the asset is unpartitioned.",
+      "type": "string"
+    },
+    "column": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+    "observed_schema": {
+      "description": "Columns and types actually written. Order is not significant.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/column"
+      }
+    },
+    "check_result": {
+      "description": "A check the executor evaluated (kind `custom` only; the engine owns the rest). The engine merges these into materialization.checks and decides success vs failed_by_check.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "custom"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": ["warn", "block"]
+        },
+        "result": {
+          "enum": ["pass", "fail"]
+        },
+        "detail": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["kind", "name", "severity", "result"],
+      "additionalProperties": false
+    },
+    "binding": {
+      "description": "One resolved connection binding. `type` is the adapter id the manifest declared for the connection, so the executor can construct the right adapter. Secret values are injected here and must never appear in an event.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The connection's adapter id from the manifest (`postgres`, `pokeapi`, …); the executor's registry maps it to `@puppi/adapter-<type>`.",
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "object"
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "mode": {
+          "enum": ["live", "read_only", "replay_raw"]
+        }
+      },
+      "required": ["type", "config", "secrets", "mode"],
+      "additionalProperties": false
+    },
+    "input": {
+      "description": "One upstream asset, as of the materialization the engine chose.",
+      "type": "object",
+      "properties": {
+        "materialization_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storage_ref": {
+          "$ref": "#/$defs/storage_ref"
+        },
+        "file": {
+          "description": "True when this materialization is one object.",
+          "type": "boolean"
+        },
+        "sha256": {
+          "type": ["string", "null"]
+        },
+        "bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "content_type": {
+          "type": ["string", "null"]
+        },
+        "meta": {
+          "type": "object"
+        },
+        "storage_connection": {
+          "description": "The connection that holds the object. Present on a file input.",
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["materialization_id", "storage_ref"],
+      "additionalProperties": false
+    },
+    "ExecutorInput": {
+      "$anchor": "ExecutorInput",
+      "title": "ExecutorInput",
+      "description": "The attempt handed to the executor, inside a lease.",
+      "type": "object",
+      "properties": {
+        "bundle_ref": {
+          "description": "Path to the bundle. An ES module default-exporting the collect-mode registry.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sdk_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asset_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "partition": {
+          "$ref": "#/$defs/partition"
+        },
+        "inputs": {
+          "description": "Upstream asset key -> the materialization ctx.input(key) resolves to.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/input"
+          }
+        },
+        "checkpoint": {
+          "description": "Transient resume state from a previous attempt, or null.",
+          "type": ["object", "null"]
+        },
+        "cursor_from": {
+          "type": ["string", "null"]
+        },
+        "latest": {
+          "description": "This asset's current latest materialization, or null on the first run. A table's ctx.latest is storage_ref. A file's also carries file, sha256, bytes, content_type, and meta.",
+          "type": ["object", "null"],
+          "properties": {
+            "materialization_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "storage_ref": {
+              "$ref": "#/$defs/storage_ref"
+            },
+            "file": {
+              "description": "True when this materialization is one object.",
+              "type": "boolean"
+            },
+            "sha256": {
+              "type": ["string", "null"]
+            },
+            "bytes": {
+              "type": ["integer", "null"],
+              "minimum": 0
+            },
+            "content_type": {
+              "type": ["string", "null"]
+            },
+            "meta": {
+              "type": "object"
+            }
+          },
+          "required": ["materialization_id", "storage_ref"],
+          "additionalProperties": false
+        },
+        "bindings": {
+          "description": "Connection name -> resolved binding.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "storage_connection": {
+          "description": "The name in `bindings` of the connection this asset writes to (`storage.connection` in the manifest), or null when it has none.",
+          "type": ["string", "null"]
+        },
+        "connections": {
+          "description": "Connection name -> the direction the manifest recorded for this asset. The engine always sends the map. An empty map means the asset reaches no connection. A write against a missing name warns and still runs.",
+          "type": "object",
+          "additionalProperties": {
+            "enum": ["read", "write", "read_write", "unknown"]
+          }
+        },
+        "output_storage_ref": {
+          "$ref": "#/$defs/storage_ref"
+        }
+      },
+      "required": [
+        "bundle_ref",
+        "sdk_version",
+        "asset_key",
+        "partition",
+        "inputs",
+        "checkpoint",
+        "cursor_from",
+        "latest",
+        "bindings",
+        "storage_connection",
+        "connections",
+        "output_storage_ref"
+      ],
+      "additionalProperties": false
+    },
+    "ExecutorEvent": {
+      "$anchor": "ExecutorEvent",
+      "title": "ExecutorEvent",
+      "description": "One logs batch, log, checkpoint, read, span, result, or error. Non-terminal events travel in `event`. A result or error travels in `complete`.",
+      "type": "object",
+      "required": ["event"],
+      "oneOf": [
+        {
+          "title": "log",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "log"
+            },
+            "level": {
+              "enum": ["debug", "info", "warn", "error"]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["event", "level", "message"],
+          "additionalProperties": false
+        },
+        {
+          "title": "logs",
+          "description": "A batch of ctx.log lines. The engine stores the batch and advances the event sequence by one. Each message is at most 4 KB.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "logs"
+            },
+            "lines": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "enum": ["debug", "info", "warn", "error"]
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "truncated": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["level", "message"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["event", "lines"],
+          "additionalProperties": false
+        },
+        {
+          "title": "checkpoint",
+          "description": "ctx.checkpoint(state). The engine upserts it keyed by (env, asset, partition) and clears it when the producer completes.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "checkpoint"
+            },
+            "state": {
+              "type": "object"
+            }
+          },
+          "required": ["event", "state"],
+          "additionalProperties": false
+        },
+        {
+          "title": "read",
+          "description": "Actual lineage, recorded by the shim when ctx.input(key) is called. The backstop for deps the compiler cannot see.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "read"
+            },
+            "asset_key": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["event", "asset_key"],
+          "additionalProperties": false
+        },
+        {
+          "title": "span",
+          "description": "Telemetry from the executor: what the shim did (`source: shim`, re-emitted by the engine as [:puppi, :executor, name]) or what user code reported through ctx.telemetry (`source: user`, re-emitted as [:puppi, :user, :span]). The attempt is known from the process, so no id travels here; the engine attaches run_id and attempt_id. Attribute values are scalars: telemetry carries facts about a run, never rows.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "span"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "enum": ["shim", "user"]
+            },
+            "kind": {
+              "description": "`span` is timed and carries duration_ms; `event` is a point in time; `gauge` is a measured value in attributes.value.",
+              "enum": ["span", "event", "gauge"]
+            },
+            "duration_ms": {
+              "type": ["number", "null"],
+              "minimum": 0
+            },
+            "attributes": {
+              "type": "object",
+              "additionalProperties": {
+                "type": ["string", "number", "boolean", "null"]
+              }
+            }
+          },
+          "required": ["event", "name", "source", "kind", "duration_ms", "attributes"],
+          "additionalProperties": false
+        },
+        {
+          "title": "result",
+          "description": "Terminal. The producer completed; the engine writes the materialization, then runs checks.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "result"
+            },
+            "storage_ref": {
+              "$ref": "#/$defs/storage_ref"
+            },
+            "observed_schema": {
+              "$ref": "#/$defs/observed_schema"
+            },
+            "stats": {
+              "type": "object",
+              "properties": {
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "bytes": {
+                  "type": ["integer", "null"],
+                  "minimum": 0
+                },
+                "content_hash": {
+                  "description": "Optional digest of what was written. The adapter owner chooses the algorithm and what it covers (every row or a subset, every column or a key); the engine only ever compares two for equality. Lets a full_refresh source skip an unchanged poll. For a file this is the sha256 of the object bytes.",
+                  "type": ["string", "null"]
+                },
+                "content_type": {
+                  "description": "The object's content type, when the materialization is a file.",
+                  "type": ["string", "null"]
+                },
+                "meta": {
+                  "description": "Producer-supplied facts about a file, such as an etag.",
+                  "type": "object"
+                }
+              },
+              "required": ["row_count"],
+              "additionalProperties": false
+            },
+            "cursor_to": {
+              "type": ["string", "null"]
+            },
+            "check_results": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/check_result"
+              }
+            },
+            "checkpoint": {
+              "description": "Final checkpoint state if the producer finished incomplete; null when it ran to completion.",
+              "type": ["object", "null"]
+            },
+            "unchanged": {
+              "description": "The producer called ctx.unchanged(). The engine records the attempt skipped and stamps verified_at on the current latest, the same path as a matching content_hash. Omitted when the producer did not call it.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "event",
+            "storage_ref",
+            "observed_schema",
+            "stats",
+            "cursor_to",
+            "check_results",
+            "checkpoint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "title": "error",
+          "description": "Terminal. No materialization is written. `class` drives the engine's retry policy.",
+          "type": "object",
+          "properties": {
+            "event": {
+              "const": "error"
+            },
+            "class": {
+              "enum": ["retryable", "terminal"]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retry_after_ms": {
+              "description": "Milliseconds until a rate-limited retry is welcome, from Retry-After. Omitted when the error is not a rate limit or the response carried no such header.",
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["event", "class", "message"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "runtime_profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bundle_digest": {
+          "type": ["string", "null"],
+          "pattern": "^(sha256:[0-9a-f]{64})?$"
+        },
+        "output_materialization_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lease_expires_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "deadline_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "attempt_id",
+        "run_id",
+        "fence",
+        "runtime_profile",
+        "bundle_digest",
+        "output_materialization_id",
+        "lease_expires_at",
+        "deadline_at"
+      ],
+      "additionalProperties": false
+    },
+    "ready": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "ready"
+        },
+        "slots": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": ["message", "slots"],
+      "additionalProperties": false
+    },
+    "lease": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "lease"
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
+        },
+        "input": {
+          "$ref": "#/$defs/ExecutorInput"
+        },
+        "claim_token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_secrets": {
+          "$ref": "#/$defs/worker_secrets"
+        },
+        "signatures": {
+          "$ref": "#/$defs/signatures"
+        }
+      },
+      "required": ["message", "execution", "input"],
+      "additionalProperties": false
+    },
+    "heartbeat": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "heartbeat"
+        },
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["message", "attempt_id", "fence"],
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "event"
+        },
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event": {
+          "$ref": "#/$defs/ExecutorEvent"
+        },
+        "withheld": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["message", "attempt_id", "fence", "seq", "event"],
+      "additionalProperties": false
+    },
+    "complete": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "complete"
+        },
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "last_seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "result": {
+          "$ref": "#/$defs/ExecutorEvent"
+        },
+        "withheld": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["message", "attempt_id", "fence", "last_seq", "result"],
+      "additionalProperties": false
+    },
+    "cancel": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "cancel"
+        },
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": ["message", "attempt_id", "fence", "reason"],
+      "additionalProperties": false
+    },
+    "settled": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "settled"
+        },
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "outcome": {
+          "description": "End of the attempt. recorded and skipped drop staged pages. rejected and fenced keep them. rejected, fenced, and skipped drop the output table. A missing outcome drops nothing.",
+          "enum": ["recorded", "rejected", "fenced", "skipped"]
+        },
+        "fenced": {
+          "description": "In-flight event ack. true stops the child before another write. The end of the attempt uses outcome instead.",
+          "type": "boolean"
+        }
+      },
+      "required": ["message", "attempt_id", "fence"],
+      "anyOf": [
+        {
+          "required": ["outcome"]
+        },
+        {
+          "required": ["fenced"]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "drop_tables": {
+      "description": "Out of an attempt. Drops a batch of storage refs on one resolved connection, the same binding an attempt would get.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "drop-tables"
+        },
+        "bundle_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "connection": {
+          "type": "string",
+          "minLength": 1
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "storage_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/storage_ref"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": ["message", "bundle_ref", "connection", "binding", "storage_refs"],
+      "additionalProperties": false
+    },
+    "dropped": {
+      "description": "The drop-tables result. failed refs are retried by the next sweep.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "const": "dropped"
+        },
+        "dropped": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/storage_ref"
+          }
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "storage_ref": {
+                "$ref": "#/$defs/storage_ref"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": ["storage_ref", "message"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["message", "dropped", "failed"],
+      "additionalProperties": false
+    },
+    "worker_secrets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "properties": {
+        "deployment": {
+          "$ref": "#/$defs/signed_deployment"
+        },
+        "environment": {
+          "$ref": "#/$defs/signed_environment"
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/signed_binding"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "signed_deployment": {
+      "type": "object",
+      "properties": {
+        "bundle_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signing_key": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["bundle_digest", "signature", "signing_key"],
+      "additionalProperties": false
+    },
+    "signed_environment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storage_prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signing_key": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "storage_prefix", "signature", "signing_key"],
+      "additionalProperties": false
+    },
+    "signed_binding": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string"
+        },
+        "config": {
+          "type": "object"
+        },
+        "secret_refs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "mode": {
+          "type": "string"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signing_key": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "type", "config", "secret_refs", "mode", "signature", "signing_key"],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ready"
+    },
+    {
+      "$ref": "#/$defs/lease"
+    },
+    {
+      "$ref": "#/$defs/heartbeat"
+    },
+    {
+      "$ref": "#/$defs/event"
+    },
+    {
+      "$ref": "#/$defs/complete"
+    },
+    {
+      "$ref": "#/$defs/cancel"
+    },
+    {
+      "$ref": "#/$defs/settled"
+    },
+    {
+      "$ref": "#/$defs/drop_tables"
+    },
+    {
+      "$ref": "#/$defs/dropped"
+    }
+  ]
+}

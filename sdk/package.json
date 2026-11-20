@@ -1,0 +1,52 @@
+{
+  "name": "@puppi/sdk",
+  "version": "0.3.0",
+  "description": "The types and declarations users import: assets, the ctx contract, the HTTP client, and the storage interfaces.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "sdk"
+  },
+  "bin": {
+    "puppi-write-operations": "./dist/write-operations.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "default": "./dist/protocol.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/stage-bin.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

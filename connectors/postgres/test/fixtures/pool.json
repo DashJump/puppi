@@ -1,0 +1,270 @@
+[
+  {
+    "name": "host form",
+    "config": { "host": "db.internal", "port": 5433, "database": "app", "user": "app" },
+    "secrets": { "password": "s3cret" },
+    "parameters": {
+      "host": "db.internal",
+      "port": 5433,
+      "database": "app",
+      "user": "app",
+      "password": "s3cret",
+      "ssl": false,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "defaults",
+    "config": {},
+    "secrets": {},
+    "parameters": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "database": "postgres",
+      "user": "postgres",
+      "password": null,
+      "ssl": false,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "neon url",
+    "config": {},
+    "secrets": {
+      "url": "postgresql://alex:AbC123dEf@ep-cool-darkness-a1b2c3d4-pooler.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require"
+    },
+    "parameters": {
+      "host": "ep-cool-darkness-a1b2c3d4-pooler.us-east-2.aws.neon.tech",
+      "port": 5432,
+      "database": "dbname",
+      "user": "alex",
+      "password": "AbC123dEf",
+      "ssl": {},
+      "channelBinding": true
+    }
+  },
+  {
+    "name": "url and ssl",
+    "config": { "ssl": true },
+    "secrets": { "url": "postgresql://postgres:secret@db.example.supabase.co:5432/postgres" },
+    "parameters": {
+      "host": "db.example.supabase.co",
+      "port": 5432,
+      "database": "postgres",
+      "user": "postgres",
+      "password": "secret",
+      "ssl": true,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "url with ssl",
+    "config": { "host": "127.0.0.1", "ssl": true },
+    "secrets": {
+      "url": "postgresql://postgres:secret@db.example.supabase.co:5432/postgres",
+      "password": "not-used"
+    },
+    "throw": "whole connection"
+  },
+  {
+    "name": "ssl against sslmode",
+    "config": { "ssl": false },
+    "secrets": { "url": "postgresql://db.example/app?sslmode=require" },
+    "throw": "sslmode=require"
+  },
+  {
+    "name": "url in config",
+    "config": { "url": "postgresql://db.example/app" },
+    "secrets": {},
+    "throw": "secret"
+  },
+  {
+    "name": "host with ssl",
+    "config": {
+      "host": "db.example.supabase.co",
+      "database": "postgres",
+      "user": "postgres",
+      "ssl": true
+    },
+    "secrets": { "password": "s3cret" },
+    "parameters": {
+      "host": "db.example.supabase.co",
+      "port": 5432,
+      "database": "postgres",
+      "user": "postgres",
+      "password": "s3cret",
+      "ssl": true,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ssl off",
+    "config": { "host": "127.0.0.1", "ssl": false },
+    "secrets": { "password": "postgres" },
+    "parameters": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "database": "postgres",
+      "user": "postgres",
+      "password": "postgres",
+      "ssl": false,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "empty url and ssl",
+    "config": {
+      "host": "10.0.0.2",
+      "port": 5432,
+      "database": "app",
+      "user": "app",
+      "url": "",
+      "ssl": ""
+    },
+    "secrets": { "url": "", "password": "s3cret" },
+    "parameters": {
+      "host": "10.0.0.2",
+      "port": 5432,
+      "database": "app",
+      "user": "app",
+      "password": "s3cret",
+      "ssl": false,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ca secret",
+    "config": { "host": "db.example", "database": "app", "user": "postgres" },
+    "secrets": {
+      "password": "s3cret",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "parameters": {
+      "host": "db.example",
+      "port": 5432,
+      "database": "app",
+      "user": "postgres",
+      "password": "s3cret",
+      "ssl": {
+        "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "rejectUnauthorized": true
+      },
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ca with sslmode require",
+    "config": {},
+    "secrets": {
+      "url": "postgresql://postgres:secret@db.example:5432/app?sslmode=require&channel_binding=require",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "parameters": {
+      "host": "db.example",
+      "port": 5432,
+      "database": "app",
+      "user": "postgres",
+      "password": "secret",
+      "ssl": {
+        "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "rejectUnauthorized": true
+      },
+      "channelBinding": true
+    }
+  },
+  {
+    "name": "ca replaces no-verify",
+    "config": {},
+    "secrets": {
+      "url": "postgresql://postgres:secret@db.example:5432/app?sslmode=no-verify",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "parameters": {
+      "host": "db.example",
+      "port": 5432,
+      "database": "app",
+      "user": "postgres",
+      "password": "secret",
+      "ssl": {
+        "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "rejectUnauthorized": true
+      },
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ca secret wins over sslrootcert",
+    "config": {},
+    "secrets": {
+      "url": "postgresql://postgres:secret@db.example:5432/app?sslmode=verify-ca&sslrootcert=/no/such/ca.pem",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "parameters": {
+      "host": "db.example",
+      "port": 5432,
+      "database": "app",
+      "user": "postgres",
+      "password": "secret",
+      "ssl": {
+        "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "rejectUnauthorized": true
+      },
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ca with ssl true",
+    "config": { "host": "db.example", "database": "app", "user": "postgres", "ssl": true },
+    "secrets": {
+      "password": "s3cret",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "parameters": {
+      "host": "db.example",
+      "port": 5432,
+      "database": "app",
+      "user": "postgres",
+      "password": "s3cret",
+      "ssl": {
+        "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "rejectUnauthorized": true
+      },
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "empty ca",
+    "config": { "host": "10.0.0.2", "database": "app", "user": "app" },
+    "secrets": { "password": "s3cret", "ca": "" },
+    "parameters": {
+      "host": "10.0.0.2",
+      "port": 5432,
+      "database": "app",
+      "user": "app",
+      "password": "s3cret",
+      "ssl": false,
+      "channelBinding": false
+    }
+  },
+  {
+    "name": "ca in config",
+    "config": { "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n" },
+    "secrets": {},
+    "throw": "secret_refs.ca"
+  },
+  {
+    "name": "ca with ssl false",
+    "config": { "host": "db.example", "ssl": false },
+    "secrets": { "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n" },
+    "throw": "ssl: false"
+  },
+  {
+    "name": "ca with sslmode disable",
+    "config": {},
+    "secrets": {
+      "url": "postgresql://postgres:secret@db.example:5432/app?sslmode=disable",
+      "ca": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
+    },
+    "throw": "sslmode=disable"
+  }
+]

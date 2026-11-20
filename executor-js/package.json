@@ -1,0 +1,67 @@
+{
+  "name": "@puppi/executor-js",
+  "version": "0.1.1",
+  "description": "The process the CLI spawns for puppi try and puppi worker start.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "executor-js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/runtime.js",
+  "types": "./dist/runtime.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime.d.ts",
+      "default": "./dist/runtime.js"
+    },
+    "./local": {
+      "types": "./dist/local/main.d.ts",
+      "default": "./dist/local/main.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/main.d.ts",
+      "default": "./dist/worker/main.js"
+    },
+    "./pool": {
+      "types": "./dist/worker/pool.d.ts",
+      "default": "./dist/worker/pool.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@puppi/adapter-storage": "workspace:*",
+    "@puppi/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@puppi/adapter-filesystem": "workspace:*",
+    "@puppi/adapter-postgres": "workspace:*",
+    "@puppi/adapter-s3": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/ws": "^8.18.2",
+    "ajv": "^8.17.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "ws": "^8.22.0"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

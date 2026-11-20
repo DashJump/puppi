@@ -1,0 +1,71 @@
+/**
+ * `defineConnector` is the identity of a catalog connector. It imports
+ * nothing generated. A list's page rule lives on the method that walks it.
+ */
+
+/** A binding config field. The keys stay the binding's own names (`base_url`). */
+export type ConfigValue = "string" | "integer" | "boolean" | "json";
+
+/**
+ * How the client authenticates. A secret name is a binding field.
+ * `scheme: "none"` is a public API. `scheme: "client"` means the client
+ * applies its own credentials from `secretFields`. `basic` reads a username
+ * and a password: the password is always `secret`, and the username is
+ * config when its name is in `configSchema`, otherwise a second secret.
+ * `usernameSuffix` is appended to that username (Zendesk's `/token`).
+ */
+export type ConnectorAuth =
+  | { readonly scheme: "bearer"; readonly secret: string }
+  | { readonly scheme: "api_key_header"; readonly header: string; readonly secret: string }
+  | { readonly scheme: "api_key_query"; readonly parameter: string; readonly secret: string }
+  | {
+      readonly scheme: "basic";
+      readonly username: string;
+      readonly secret: string;
+      readonly usernameSuffix?: string;
+    }
+  | { readonly scheme: "client" }
+  | { readonly scheme: "none" };
+
+/**
+ * The secret names `auth` reads, in the order `secretFields` must list them.
+ * `none` and `client` are `[]`: `client` does not name a secret, and the
+ * connector lists `secretFields` itself. Bearer, API key header, and API key
+ * query are `[auth.secret]`. Basic is `[auth.secret]` when `username` is a
+ * config field, and `[auth.username, auth.secret]` when the username is a
+ * secret (its name is not in `configSchema`).
+ */
+export function secretFieldsFor(
+  auth: { readonly scheme: string; readonly secret?: string; readonly username?: string },
+  configSchema: Readonly<Record<string, string>>,
+): readonly string[] {
+  if (auth.scheme === "none" || auth.scheme === "client" || !auth.secret) return [];
+
+  if (auth.scheme === "basic" && auth.username && !(auth.username in configSchema)) {
+    return [auth.username, auth.secret];
+  }
+
+  return [auth.secret];
+}
+
+export interface ConnectorDefinition {
+  readonly type: string;
+  readonly docs: string;
+  readonly configSchema: Readonly<Record<string, ConfigValue>>;
+  readonly secretFields: readonly string[];
+  readonly auth: ConnectorAuth;
+  readonly apiVersions: readonly string[];
+  readonly defaultApiVersion: string;
+  readonly defaultBaseUrl?: string;
+}
+
+/**
+ * Returns `definition` with its type checked. `defaultApiVersion` has to be
+ * one of `apiVersions`.
+ */
+export function defineConnector<const D extends ConnectorDefinition>(
+  definition: D &
+    ([D["defaultApiVersion"]] extends [D["apiVersions"][number]] ? unknown : "defaultApiVersion"),
+): D {
+  return definition;
+}

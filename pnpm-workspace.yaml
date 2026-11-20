@@ -1,0 +1,9 @@
+packages:
+  - sdk
+  - conformance
+  - cli
+  - executor-js
+  - storage
+  - connectors/*
+allowBuilds:
+  esbuild: true

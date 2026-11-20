@@ -1,0 +1,51 @@
+{
+  "name": "@puppi/adapter-podcast-rss",
+  "version": "0.1.1",
+  "description": "Source connector for podcast RSS and Atom feeds. episodes() takes feed_url per call.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "connectors/podcast-rss"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/openapi.ts --export-type --root-types --empty-objects-unknown --default-non-nullable=false && puppi-write-operations openapi.json src/operations.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@puppi/sdk": "workspace:*",
+    "fast-xml-parser": "5.11.2"
+  },
+  "devDependencies": {
+    "@puppi/conformance": "workspace:*",
+    "@types/node": "^26.6.5",
+    "openapi-typescript": "7.13.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}
