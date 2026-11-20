@@ -1,6 +1,12 @@
 # Test asset keys. generic-api-key false positives.
 679830d243eae5d5f2f263cc6e019383b32c6856:cli/test/manifest.test.ts:generic-api-key:128
 679830d243eae5d5f2f263cc6e019383b32c6856:sdk/test/collect.test.ts:generic-api-key:24
+# The squash merge onto master repeats those two lines under a new commit.
+c0c898ed0c180e1be8c0a14b903bc03093ed87c9:cli/test/manifest.test.ts:generic-api-key:128
+c0c898ed0c180e1be8c0a14b903bc03093ed87c9:sdk/test/collect.test.ts:generic-api-key:24
+# Directory scans have no commit id, so the same lines need a global fingerprint.
+cli/test/manifest.test.ts:generic-api-key:128
+sdk/test/collect.test.ts:generic-api-key:24
 
 # Vendor examples in published OpenAPI documents: Apollo example record ids, and Square's example version_token.
 connectors/apollo/openapi.json:generic-api-key:332
