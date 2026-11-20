@@ -1,8 +1,21 @@
 {
   "name": "@puppi/adapter-frankfurter",
   "version": "0.1.0",
-  "private": true,
   "description": "Source connector for Frankfurter (ECB reference exchange rates).",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "connectors/frankfurter"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +24,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "generate": "openapi-typescript openapi.json -o src/openapi.ts --export-type --root-types --empty-objects-unknown --default-non-nullable=false && puppi-write-operations openapi.json src/operations.ts && vp fmt --write src/openapi.ts src/operations.ts",
@@ -28,5 +44,8 @@
     "openapi-typescript": "7.13.0",
     "typescript": "^5.6.3",
     "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=26"
   }
 }

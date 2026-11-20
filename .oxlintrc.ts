@@ -187,8 +187,8 @@ export default {
       },
     },
     {
-      // `pnpm generate` writes this file. Its unions trip no-redundant-type-constituents.
-      files: ["connectors/posthog/src/openapi.ts"],
+      // `pnpm generate` writes these files. Their unions trip no-redundant-type-constituents.
+      files: ["connectors/posthog/src/openapi.ts", "connectors/notion/src/openapi.ts"],
       rules: {
         "typescript/no-redundant-type-constituents": "off",
       },
