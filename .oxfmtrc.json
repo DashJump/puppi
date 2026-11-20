@@ -1,5 +1,11 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["**/dist/**", "**/puppi-env.d.ts", "pnpm-lock.yaml", "**/*.md"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/puppi-env.d.ts",
+    "pnpm-lock.yaml",
+    "**/*.md",
+    "connectors/**/openapi.json"
+  ],
   "sortImports": true
 }
