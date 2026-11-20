@@ -1,0 +1,14 @@
+{
+  "pagination": {
+    "page": 1,
+    "per_page": 100,
+    "total_entries": 1000,
+    "total_pages": 501
+  },
+  "organizations": [
+    {
+      "id": "o1",
+      "name": "Apollo.io"
+    }
+  ]
+}

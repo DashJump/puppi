@@ -1,0 +1,317 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PokeAPI",
+    "version": "2.0.0",
+    "description": "https://pokeapi.co/api/v2. Lists use limit and offset. next is null on the last page."
+  },
+  "servers": [{ "url": "https://pokeapi.co/api/v2" }],
+  "paths": {
+    "/pokemon": {
+      "get": {
+        "operationId": "listPokemon",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of pokemon names.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/namedPage" } }
+            }
+          }
+        }
+      }
+    },
+    "/pokemon/{name}": {
+      "get": {
+        "operationId": "getPokemon",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One pokemon.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/pokemon" } }
+            }
+          }
+        }
+      }
+    },
+    "/pokemon-species": {
+      "get": {
+        "operationId": "listPokemonSpecies",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of species names.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/namedPage" } }
+            }
+          }
+        }
+      }
+    },
+    "/pokemon-species/{name}": {
+      "get": {
+        "operationId": "getSpecies",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One species.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/species" } }
+            }
+          }
+        }
+      }
+    },
+    "/type": {
+      "get": {
+        "operationId": "listType",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of types.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/namedPage" } }
+            }
+          }
+        }
+      }
+    },
+    "/type/{name}": {
+      "get": {
+        "operationId": "getType",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One type.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/type" } } }
+          }
+        }
+      }
+    },
+    "/generation": {
+      "get": {
+        "operationId": "listGeneration",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of generations.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/namedPage" } }
+            }
+          }
+        }
+      }
+    },
+    "/generation/{name}": {
+      "get": {
+        "operationId": "getGeneration",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One generation.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/generation" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "namedPage": {
+        "type": "object",
+        "required": ["count", "results"],
+        "properties": {
+          "count": { "type": "integer" },
+          "next": { "type": "string", "nullable": true },
+          "previous": { "type": "string", "nullable": true },
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/named" }
+          }
+        }
+      },
+      "named": {
+        "type": "object",
+        "required": ["name", "url"],
+        "properties": {
+          "name": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      },
+      "pokemon": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "height",
+          "weight",
+          "base_experience",
+          "order",
+          "is_default",
+          "types",
+          "stats",
+          "abilities",
+          "species"
+        ],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "height": { "type": "integer", "description": "Decimetres." },
+          "weight": { "type": "integer", "description": "Hectograms." },
+          "base_experience": { "type": "integer", "nullable": true },
+          "order": { "type": "integer" },
+          "is_default": { "type": "boolean" },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["slot", "type"],
+              "properties": {
+                "slot": { "type": "integer" },
+                "type": { "$ref": "#/components/schemas/named" }
+              }
+            }
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["base_stat", "effort", "stat"],
+              "properties": {
+                "base_stat": { "type": "integer" },
+                "effort": { "type": "integer" },
+                "stat": { "$ref": "#/components/schemas/named" }
+              }
+            }
+          },
+          "abilities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["ability", "is_hidden", "slot"],
+              "properties": {
+                "ability": { "$ref": "#/components/schemas/named" },
+                "is_hidden": { "type": "boolean" },
+                "slot": { "type": "integer" }
+              }
+            }
+          },
+          "species": { "$ref": "#/components/schemas/named" }
+        }
+      },
+      "species": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "is_legendary",
+          "is_mythical",
+          "is_baby",
+          "capture_rate",
+          "base_happiness",
+          "generation",
+          "color",
+          "habitat",
+          "evolves_from_species"
+        ],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "is_legendary": { "type": "boolean" },
+          "is_mythical": { "type": "boolean" },
+          "is_baby": { "type": "boolean" },
+          "capture_rate": { "type": "integer" },
+          "base_happiness": { "type": "integer", "nullable": true },
+          "generation": { "$ref": "#/components/schemas/named" },
+          "color": { "$ref": "#/components/schemas/named" },
+          "habitat": { "allOf": [{ "$ref": "#/components/schemas/named" }], "nullable": true },
+          "evolves_from_species": {
+            "allOf": [{ "$ref": "#/components/schemas/named" }],
+            "nullable": true
+          }
+        }
+      },
+      "damageRelations": {
+        "type": "object",
+        "required": [
+          "double_damage_from",
+          "double_damage_to",
+          "half_damage_from",
+          "half_damage_to",
+          "no_damage_from",
+          "no_damage_to"
+        ],
+        "properties": {
+          "double_damage_from": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/named" }
+          },
+          "double_damage_to": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/named" }
+          },
+          "half_damage_from": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/named" }
+          },
+          "half_damage_to": { "type": "array", "items": { "$ref": "#/components/schemas/named" } },
+          "no_damage_from": { "type": "array", "items": { "$ref": "#/components/schemas/named" } },
+          "no_damage_to": { "type": "array", "items": { "$ref": "#/components/schemas/named" } }
+        }
+      },
+      "type": {
+        "type": "object",
+        "required": ["id", "name", "damage_relations", "pokemon"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "damage_relations": { "$ref": "#/components/schemas/damageRelations" },
+          "pokemon": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["slot", "pokemon"],
+              "properties": {
+                "slot": { "type": "integer" },
+                "pokemon": { "$ref": "#/components/schemas/named" }
+              }
+            }
+          }
+        }
+      },
+      "generation": {
+        "type": "object",
+        "required": ["id", "name", "main_region", "pokemon_species"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "main_region": { "$ref": "#/components/schemas/named" },
+          "pokemon_species": { "type": "array", "items": { "$ref": "#/components/schemas/named" } }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "orders": [
+    {
+      "id": "order_2",
+      "location_id": "L1",
+      "state": "OPEN",
+      "created_at": "2026-03-02T00:00:00Z"
+    }
+  ]
+}

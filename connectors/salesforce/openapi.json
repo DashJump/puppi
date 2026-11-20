@@ -1,0 +1,103 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Salesforce REST API",
+    "version": "v59.0",
+    "description": "SOQL query and Account retrieve, written from https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm and https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve.htm. The version is a prefix of the base URL (/services/data/<version>), not a path in this document. The instance host is per account and is not in this document. Query pagination is nextRecordsUrl, a path on that instance. The Account schema keeps Id and Name."
+  },
+  "servers": [
+    {
+      "url": "https://{instance}.my.salesforce.com/services/data/v59.0",
+      "variables": {
+        "instance": {
+          "default": "example",
+          "description": "The account's My Domain host. A binding base_url replaces this."
+        }
+      }
+    }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/query": {
+      "get": {
+        "operationId": "query",
+        "summary": "Execute a SOQL query",
+        "description": "Returns one page of records. The following page, when there is one, is nextRecordsUrl.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "A SOQL query.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of query results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["done", "totalSize", "records"],
+                  "properties": {
+                    "done": { "type": "boolean" },
+                    "totalSize": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Account" }
+                    },
+                    "nextRecordsUrl": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sobjects/Account/{id}": {
+      "get": {
+        "operationId": "getAccount",
+        "summary": "Retrieve an Account",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Account.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Account" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Bearer HTTP authentication. Authorization: Bearer <access_token>"
+      }
+    },
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "required": ["Id", "Name"],
+        "properties": {
+          "Id": { "type": "string" },
+          "Name": { "type": "string" }
+        }
+      }
+    }
+  }
+}

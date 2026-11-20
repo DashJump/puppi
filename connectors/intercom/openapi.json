@@ -1,0 +1,3790 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Intercom API",
+    "version": "2.17",
+    "description": "The intercom API reference.",
+    "contact": {
+      "name": "Intercom Developer Hub",
+      "url": "https://developers.intercom.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://spdx.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.intercom.io",
+      "description": "The production API server"
+    },
+    {
+      "url": "https://api.eu.intercom.io",
+      "description": "The european API server"
+    },
+    {
+      "url": "https://api.au.intercom.io",
+      "description": "The australian API server"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/contacts": {
+      "get": {
+        "summary": "List all contacts",
+        "parameters": [
+          {
+            "name": "Intercom-Version",
+            "in": "header",
+            "schema": {
+              "$ref": "#/components/schemas/intercom_version"
+            }
+          },
+          {
+            "name": "include_merge_history",
+            "in": "query",
+            "description": "Pass `true` to include a `merge_history` array on each contact in the response. Returned for contacts of any role, with at most the 10 most recent merges.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "escape_identity",
+            "in": "query",
+            "description": "By default, `name` and `email` values in the response, including nested ones such as social profile names, are HTML-escaped (for example, `&` is returned as `&amp;`). Custom attributes and tags are never escaped. Pass `false` to return them unescaped.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "The number of results per page. Defaults to `10`, with a maximum of `150`; larger values are treated as `150`. Only the leading digits are read, so `1.5` is treated as `1`. A value that doesn't start with a positive integer, such as `0` or `abc`, returns a `400` error with code `invalid_per_page`.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10,
+              "maximum": 150
+            }
+          },
+          {
+            "name": "starting_after",
+            "in": "query",
+            "description": "The cursor value from `pages.next.starting_after` in a previous response. An empty value is ignored. A value that isn't a valid cursor returns a `400` error with code `client_error`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "Contacts"
+        ],
+        "operationId": "ListContacts",
+        "description": "You can fetch a list of all contacts (ie. users or leads) in your workspace.\n{% admonition type=\"info\" name=\"Merged contacts\" %}\n  Contacts that have been merged (via POST /contacts/merge) will not appear in list results. Only the target contact from the merge remains accessible.\n{% /admonition %}\n{% admonition type=\"warning\" name=\"Pagination\" %}\n  You can use pagination to limit the number of results returned. The default is `10` results per page, with a maximum of `150`.\n  See the [pagination section](https://developers.intercom.com/docs/build-an-integration/learn-more/rest-apis/pagination/#pagination-for-list-apis) for more details on how to use the `starting_after` param.\n{% /admonition %}\n\nRequires the `read_users_companies` or `read_write_users` OAuth scope.\n",
+        "responses": {
+          "200": {
+            "description": "successful",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "successful": {
+                    "value": {
+                      "type": "list",
+                      "data": [],
+                      "total_count": 0,
+                      "pages": {
+                        "type": "pages",
+                        "page": 1,
+                        "per_page": 10,
+                        "total_pages": 0
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/contact_list"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Invalid per_page": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "0b6e3d82-5f1a-4c97-a2d8-6e9f4b1c3a75",
+                      "errors": [
+                        {
+                          "code": "invalid_per_page",
+                          "message": "per_page must be a positive integer"
+                        }
+                      ]
+                    }
+                  },
+                  "Invalid starting_after": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "8e2a4c61-3d7f-4b05-9c1e-5a8b2f6d0e94",
+                      "errors": [
+                        {
+                          "code": "client_error",
+                          "message": "Invalid starting_after param. Please try again using a starting_after value from a paginated response"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Unauthorized": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "e097e446-9ae6-44a8-8e13-2bf3008b87ef",
+                      "errors": [
+                        {
+                          "code": "unauthorized",
+                          "message": "Access Token Invalid"
+                        }
+                      ]
+                    }
+                  },
+                  "Token lacks required scope": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "e3b9f9b0-51d9-5926-bca5-4f5b6c9a3e5c",
+                      "errors": [
+                        {
+                          "code": "token_unauthorized",
+                          "message": "Not authorized to access resource"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations": {
+      "get": {
+        "summary": "List all conversations",
+        "parameters": [
+          {
+            "name": "Intercom-Version",
+            "in": "header",
+            "schema": {
+              "$ref": "#/components/schemas/intercom_version"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 150
+            },
+            "required": false,
+            "description": "How many results per page"
+          },
+          {
+            "name": "starting_after",
+            "in": "query",
+            "required": false,
+            "description": "String used to get the next page of conversations.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_monitors",
+            "in": "query",
+            "required": false,
+            "description": "If set to true, the response will include a `monitor_evaluations` array on each conversation with the latest QA monitor evaluation for each monitor that has evaluated it.",
+            "example": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "include_scorecards",
+            "in": "query",
+            "required": false,
+            "description": "If set to true, the response will include a `scorecards` array on each conversation with any QA scorecard results.",
+            "example": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ],
+        "operationId": "listConversations",
+        "description": "You can fetch a list of all conversations.\n\nYou can optionally request the result page size and the cursor to start after to fetch the result.\n{% admonition type=\"warning\" name=\"Pagination\" %}\n  You can use pagination to limit the number of results returned. The default is `20` results per page.\n  See the [pagination section](https://developers.intercom.com/docs/build-an-integration/learn-more/rest-apis/pagination/#pagination-for-list-apis) for more details on how to use the `starting_after` param.\n{% /admonition %}\n",
+        "responses": {
+          "200": {
+            "description": "successful",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "successful": {
+                    "value": {
+                      "type": "conversation.list",
+                      "pages": {
+                        "type": "pages",
+                        "page": 1,
+                        "per_page": 20,
+                        "total_pages": 1
+                      },
+                      "total_count": 1,
+                      "conversations": [
+                        {
+                          "type": "conversation",
+                          "id": "471",
+                          "created_at": 1734537460,
+                          "updated_at": 1734537460,
+                          "waiting_since": null,
+                          "snoozed_until": null,
+                          "source": {
+                            "type": "conversation",
+                            "id": "403918320",
+                            "delivered_as": "admin_initiated",
+                            "subject": "",
+                            "body": "<p>this is the message body</p>",
+                            "author": {
+                              "type": "admin",
+                              "id": "991267628",
+                              "name": "Ciaran166 Lee",
+                              "email": "admin166@email.com"
+                            },
+                            "attachments": [],
+                            "url": null,
+                            "redacted": false
+                          },
+                          "contacts": {
+                            "type": "contact.list",
+                            "contacts": [
+                              {
+                                "type": "contact",
+                                "id": "6762f0f31bb69f9f2193bb8b",
+                                "external_id": "70"
+                              }
+                            ]
+                          },
+                          "first_contact_reply": null,
+                          "admin_assignee_id": 991267715,
+                          "team_assignee_id": 5017691,
+                          "open": false,
+                          "state": "closed",
+                          "read": false,
+                          "tags": {
+                            "type": "tag.list",
+                            "tags": []
+                          },
+                          "priority": "none",
+                          "sla_applied": null,
+                          "statistics": null,
+                          "conversation_rating": null,
+                          "teammates": null,
+                          "title": null,
+                          "custom_attributes": {},
+                          "topics": {},
+                          "ticket": null,
+                          "linked_objects": {
+                            "type": "list",
+                            "data": [],
+                            "total_count": 0,
+                            "has_more": false
+                          },
+                          "ai_agent": null,
+                          "ai_agent_participated": false,
+                          "sales_agent_participated": false,
+                          "sales_agent": null,
+                          "company": null,
+                          "external_references": [],
+                          "channel": {
+                            "initial": "messenger",
+                            "current": "messenger"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/conversation_list"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Invalid per_page": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "3b6e9d52-7a04-4c81-b5f3-0d8a2e4c1f69",
+                      "errors": [
+                        {
+                          "code": "invalid_per_page",
+                          "message": "per_page must be an integer between 0 and 150"
+                        }
+                      ]
+                    }
+                  },
+                  "Invalid starting_after": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "c9a5e130-6d72-4f48-8b0e-2a7c4d1f5b83",
+                      "errors": [
+                        {
+                          "code": "client_error",
+                          "message": "Invalid starting_after param. Please try again using a starting_after value from a paginated response"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Unauthorized": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "b14d75ab-7d26-4191-b33f-77ca0a4d4ede",
+                      "errors": [
+                        {
+                          "code": "unauthorized",
+                          "message": "Access Token Invalid"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API plan restricted",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "API plan restricted": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "591a0c2f-78b3-41bb-bfa7-f1fae15107b9",
+                      "errors": [
+                        {
+                          "code": "api_plan_restricted",
+                          "message": "Active subscription needed."
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/companies/scroll": {
+      "get": {
+        "summary": "Scroll over all companies",
+        "parameters": [
+          {
+            "name": "Intercom-Version",
+            "in": "header",
+            "schema": {
+              "$ref": "#/components/schemas/intercom_version"
+            }
+          },
+          {
+            "name": "scroll_param",
+            "in": "query",
+            "required": false,
+            "description": "The `scroll_param` from the previous response. Omit it to start a new scroll.",
+            "example": "69352cd2-ab5b-42ac-b004-a13d4e55e9b0",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "Companies"
+        ],
+        "operationId": "scrollOverAllCompanies",
+        "description": "      The `list all companies` functionality does not work well for huge datasets, and can result in errors and performance problems when paging deeply. The Scroll API provides an efficient mechanism for iterating over all companies in a dataset.\n\n- Each app can only have 1 scroll open at a time. Starting a second one returns a `400` error with code `scroll_exists`.\n- If the scroll isn't used for 1 minute, it expires and calls with that scroll param return a `404` error with code `not_found`.\n- If the end of the scroll is reached, `data` will be empty and the scroll parameter will expire.\n\nThe response always has `pages` and `total_count` set to `null`. Use `scroll_param` to fetch the next page.\n\n{% admonition type=\"info\" name=\"Scroll Parameter\" %}\n  You can get the first page of companies by simply sending a GET request to the scroll endpoint.\n  For subsequent requests you will need to use the scroll parameter from the response.\n{% /admonition %}\n{% admonition type=\"danger\" name=\"Scroll network timeouts\" %}\n  Since scroll is often used on large datasets network errors such as timeouts can be encountered. When this occurs you will see a HTTP 500 error with the following message:\n  \"Request failed due to an internal network error. Please restart the scroll operation.\"\n  If this happens, you will need to restart your scroll query: It is not possible to continue from a specific point when using scroll.\n{% /admonition %}\n\nRequires the `read_users_companies` OAuth scope.\n",
+        "responses": {
+          "200": {
+            "description": "Successful",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Successful": {
+                    "value": {
+                      "type": "list",
+                      "data": [
+                        {
+                          "type": "company",
+                          "company_id": "remote_companies_scroll_2",
+                          "id": "6762f0971bb69f9f2193bb2b",
+                          "app_id": "this_is_an_id193_that_should_be_at_least_",
+                          "name": "IntercomQATest1",
+                          "remote_created_at": 1734537367,
+                          "created_at": 1734537367,
+                          "updated_at": 1734537367,
+                          "monthly_spend": 0,
+                          "session_count": 0,
+                          "user_count": 4,
+                          "tags": {
+                            "type": "tag.list",
+                            "tags": []
+                          },
+                          "segments": {
+                            "type": "segment.list",
+                            "segments": []
+                          },
+                          "plan": {},
+                          "custom_attributes": {},
+                          "notes": {
+                            "type": "note.list",
+                            "data": [],
+                            "url": "/companies/6762f0971bb69f9f2193bb2b/notes",
+                            "total_count": 0,
+                            "has_more": false
+                          }
+                        }
+                      ],
+                      "pages": null,
+                      "total_count": null,
+                      "scroll_param": "69352cd2-ab5b-42ac-b004-a13d4e55e9b0"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/company_scroll"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Scroll already open": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "9f5e5eaf-f1a3-4dd7-92b4-9da5c74c77e8",
+                      "errors": [
+                        {
+                          "code": "scroll_exists",
+                          "message": "scroll already exists for this workspace"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Unauthorized": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "ca269b05-8c42-4615-a28d-7df0eb1687c5",
+                      "errors": [
+                        {
+                          "code": "unauthorized",
+                          "message": "Access Token Invalid"
+                        }
+                      ]
+                    }
+                  },
+                  "Token lacks required scope": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "b17a7ac1-13c5-4ff9-b4d6-bfc7e96e99fa",
+                      "errors": [
+                        {
+                          "code": "token_unauthorized",
+                          "message": "Not authorized to access resource"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scroll Parameter Not Found",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Scroll parameter not found": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "a06f6fb0-02b4-4ee8-a3c5-aeb6d85d88f9",
+                      "errors": [
+                        {
+                          "code": "not_found",
+                          "message": "scroll parameter not found"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Scroll temporarily unavailable": {
+                    "value": {
+                      "type": "error.list",
+                      "request_id": "c28b8bd2-24d6-40aa-c5e7-c0d8fa7faa0b",
+                      "errors": [
+                        {
+                          "code": "service_unavailable",
+                          "message": "Feature temporarily unavailable"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "intercom_version": {
+        "description": "Intercom API version.</br>If you omit the header, the API uses the version set in your app package, and 1.0 if none is set.",
+        "type": "string",
+        "example": "2.17",
+        "enum": [
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "2.0",
+          "2.1",
+          "2.2",
+          "2.3",
+          "2.4",
+          "2.5",
+          "2.6",
+          "2.7",
+          "2.8",
+          "2.9",
+          "2.10",
+          "2.11",
+          "2.12",
+          "2.13",
+          "2.14",
+          "2.15",
+          "2.16",
+          "2.17"
+        ]
+      },
+      "contact_list": {
+        "title": "Contact List",
+        "type": "object",
+        "description": "Contacts are your users in Intercom.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Always list",
+            "enum": [
+              "list"
+            ],
+            "example": "list"
+          },
+          "data": {
+            "type": "array",
+            "description": "The list of contact objects",
+            "items": {
+              "$ref": "#/components/schemas/contact"
+            }
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "A count of the total number of objects.",
+            "example": 100
+          },
+          "pages": {
+            "$ref": "#/components/schemas/cursor_pages"
+          }
+        }
+      },
+      "error": {
+        "type": "object",
+        "title": "Error",
+        "description": "The API will return an Error List for a failed request, which will contain one or more Error objects.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type is error.list",
+            "example": "error.list"
+          },
+          "request_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "",
+            "example": "f93ecfa8-d08a-4325-8694-89aeb89c8f85"
+          },
+          "errors": {
+            "type": "array",
+            "description": "An array of one or more error objects",
+            "items": {
+              "properties": {
+                "code": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ],
+                  "description": "A string indicating the kind of error, used to further qualify the HTTP response code. A few request validation errors send an HTTP status code as an integer here instead, for example `422`.",
+                  "example": "unauthorized"
+                },
+                "message": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Optional. Human readable description of the error.",
+                  "example": "Access Token Invalid"
+                },
+                "data": {
+                  "type": "object",
+                  "nullable": true,
+                  "additionalProperties": true,
+                  "description": "Optional. Extra detail about the error, for example `required_permissions` on a 403 `action_forbidden` error.",
+                  "example": {
+                    "required_permissions": [
+                      "read_conversations"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "errors"
+        ]
+      },
+      "conversation_list": {
+        "title": "Conversation List",
+        "type": "object",
+        "description": "Conversations are how you can communicate with users in Intercom. They are created when a contact replies to an outbound message, or when one admin directly sends a message to a single contact.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Always conversation.list",
+            "enum": [
+              "conversation.list"
+            ],
+            "example": "conversation.list"
+          },
+          "conversations": {
+            "type": "array",
+            "description": "The list of conversation objects",
+            "items": {
+              "$ref": "#/components/schemas/conversation_list_item"
+            }
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "A count of the total number of objects.",
+            "example": 12345
+          },
+          "pages": {
+            "$ref": "#/components/schemas/cursor_pages"
+          }
+        }
+      },
+      "company_scroll": {
+        "title": "Company Scroll",
+        "type": "object",
+        "description": "Companies allow you to represent organizations using your product. Each company will have its own description and be associated with contacts. You can fetch, create, update and list companies.",
+        "nullable": true,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of object - `list`",
+            "enum": [
+              "list"
+            ],
+            "example": "list"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/company"
+            }
+          },
+          "pages": {
+            "type": "object",
+            "description": "Always `null`. Page through a scroll with `scroll_param` instead.",
+            "nullable": true
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Always `null`. The scroll endpoint does not count the companies it returns.",
+            "nullable": true
+          },
+          "scroll_param": {
+            "type": "string",
+            "description": "The scroll parameter to use in the next request to fetch the next page of results.",
+            "example": "25b649f7-4d33-4ef6-88f5-60e5b8244309"
+          }
+        }
+      },
+      "contact": {
+        "title": "Contact",
+        "type": "object",
+        "x-tags": [
+          "Contacts"
+        ],
+        "x-fern-sdk-group-name": "contacts",
+        "description": "Contacts represent your leads and users in Intercom.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of object.",
+            "example": "contact"
+          },
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the contact which is given by Intercom.",
+            "example": "5ba682d23d7cf92bef87bfd4"
+          },
+          "external_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unique identifier for the contact which is provided by the Client.",
+            "example": "f3b87a2e09d514c6c2e79b9a"
+          },
+          "workspace_id": {
+            "type": "string",
+            "description": "The id of the workspace which the contact belongs to.",
+            "example": "ecahpwf5"
+          },
+          "role": {
+            "type": "string",
+            "description": "The role of the contact.",
+            "example": "user"
+          },
+          "email": {
+            "type": "string",
+            "description": "The contact's email.",
+            "example": "joe@example.com"
+          },
+          "email_domain": {
+            "type": "string",
+            "description": "The contact's email domain.",
+            "example": "example.com"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "description": "Whether the contact has proved they own their current email address. `true` only when this address was marked verified through the Contacts API (`email_verified: true` on create or update) and has not changed since; it becomes `false` again if the contact's email changes, until the new address is verified. Intercom reuses a lead with a verified email when it later matches an inbound email, or an outbound conversation or ticket, to that address, instead of creating a new lead. In List contacts and Search contacts responses it is left out only if the contact can't be loaded, for example when it is deleted while the request runs.",
+            "example": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contacts phone.",
+            "example": "+1123456789"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contacts name.",
+            "example": "John Doe"
+          },
+          "owner_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of an admin that has been assigned account ownership of the contact.",
+            "example": "321"
+          },
+          "has_hard_bounced": {
+            "type": "boolean",
+            "description": "Whether the contact has had an email sent to them hard bounce.",
+            "example": true
+          },
+          "marked_email_as_spam": {
+            "type": "boolean",
+            "description": "Whether the contact has marked an email sent to them as spam.",
+            "example": true
+          },
+          "unsubscribed_from_emails": {
+            "type": "boolean",
+            "description": "Whether the contact is unsubscribed from emails.",
+            "example": true
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "(Unix timestamp in seconds) The time when the contact was created.",
+            "example": 1571672154
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "(Unix timestamp in seconds) The time when the contact was last updated.",
+            "example": 1571672154
+          },
+          "signed_up_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time specified for when a contact signed up.",
+            "example": 1571672154
+          },
+          "last_seen_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time when the contact was last seen (either where the Intercom Messenger was installed or when specified manually).",
+            "example": 1571672154
+          },
+          "last_replied_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time when the contact last messaged in.",
+            "example": 1571672154
+          },
+          "last_contacted_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time when the contact was last messaged.",
+            "example": 1571672154
+          },
+          "last_email_opened_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time when the contact last opened an email.",
+            "example": 1571672154
+          },
+          "last_email_clicked_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "(Unix timestamp in seconds) The time when the contact last clicked a link in an email.",
+            "example": 1571672154
+          },
+          "language_override": {
+            "type": "string",
+            "nullable": true,
+            "description": "A preferred language setting for the contact, used by the Intercom Messenger even if their browser settings change.",
+            "example": "en"
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the browser which the contact is using.",
+            "example": "Chrome"
+          },
+          "browser_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the browser which the contact is using.",
+            "example": "80.0.3987.132"
+          },
+          "browser_language": {
+            "type": "string",
+            "nullable": true,
+            "description": "The language set by the browser which the contact is using.",
+            "example": "en-US"
+          },
+          "os": {
+            "type": "string",
+            "nullable": true,
+            "description": "The operating system which the contact is using.",
+            "example": "Mac OS X"
+          },
+          "android_app_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the Android app which the contact is using.",
+            "example": "Intercom"
+          },
+          "android_app_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the Android app which the contact is using.",
+            "example": "5.0.0"
+          },
+          "android_device": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Android device which the contact is using.",
+            "example": "Pixel 3"
+          },
+          "android_os_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the Android OS which the contact is using.",
+            "example": "10"
+          },
+          "android_sdk_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the Android SDK which the contact is using.",
+            "example": "28"
+          },
+          "android_last_seen_at": {
+            "type": "integer",
+            "nullable": true,
+            "format": "date-time",
+            "description": "(Unix timestamp in seconds) The time when the contact was last seen on an Android device.",
+            "example": 1571672154
+          },
+          "ios_app_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the iOS app which the contact is using.",
+            "example": "Intercom"
+          },
+          "ios_app_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the iOS app which the contact is using.",
+            "example": "5.0.0"
+          },
+          "ios_device": {
+            "type": "string",
+            "nullable": true,
+            "description": "The iOS device which the contact is using.",
+            "example": "iPhone 11"
+          },
+          "ios_os_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of iOS which the contact is using.",
+            "example": "13.3.1"
+          },
+          "ios_sdk_version": {
+            "type": "string",
+            "nullable": true,
+            "description": "The version of the iOS SDK which the contact is using.",
+            "example": "13.3.1"
+          },
+          "ios_last_seen_at": {
+            "type": "integer",
+            "nullable": true,
+            "format": "date-time",
+            "description": "(Unix timestamp in seconds) The last time the contact used the iOS app.",
+            "example": 1571672154
+          },
+          "custom_attributes": {
+            "type": "object",
+            "description": "The custom attributes which are set for the contact."
+          },
+          "avatar": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "An image URL containing the avatar of a contact.",
+            "example": "https://example.org/128Wash.jpg"
+          },
+          "tags": {
+            "$ref": "#/components/schemas/contact_tags"
+          },
+          "notes": {
+            "$ref": "#/components/schemas/contact_notes"
+          },
+          "companies": {
+            "$ref": "#/components/schemas/contact_companies"
+          },
+          "location": {
+            "$ref": "#/components/schemas/contact_location"
+          },
+          "social_profiles": {
+            "$ref": "#/components/schemas/contact_social_profiles"
+          },
+          "opted_out_subscription_types": {
+            "$ref": "#/components/schemas/contact_subscription_types"
+          },
+          "opted_in_subscription_types": {
+            "$ref": "#/components/schemas/contact_subscription_types"
+          },
+          "utm_campaign": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `utm_campaign` value recorded for the contact.",
+            "example": "spring_launch"
+          },
+          "utm_content": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `utm_content` value recorded for the contact.",
+            "example": "banner_ad"
+          },
+          "utm_medium": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `utm_medium` value recorded for the contact.",
+            "example": "email"
+          },
+          "utm_source": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `utm_source` value recorded for the contact.",
+            "example": "newsletter"
+          },
+          "utm_term": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `utm_term` value recorded for the contact.",
+            "example": "support_software"
+          },
+          "referrer": {
+            "type": "string",
+            "nullable": true,
+            "description": "The URL of the page the contact came from, as recorded by the Messenger.",
+            "example": "https://example.com/pricing"
+          },
+          "sms_consent": {
+            "type": "boolean",
+            "description": "Whether the contact has consented to receive SMS messages.",
+            "example": false
+          },
+          "unsubscribed_from_sms": {
+            "type": "boolean",
+            "description": "Whether the contact is unsubscribed from SMS messages.",
+            "example": false
+          },
+          "enabled_push_messaging": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the contact has a mobile device registered to receive push messages.",
+            "example": true
+          },
+          "merge_history": {
+            "type": "array",
+            "nullable": true,
+            "description": "A list of contacts that were merged into this contact, most recent first, capped at 10. Only included in the response when `include_merge_history=true` is passed as a query parameter.",
+            "items": {
+              "$ref": "#/components/schemas/merge_history_item"
+            }
+          }
+        }
+      },
+      "cursor_pages": {
+        "title": "Cursor based pages",
+        "type": "object",
+        "description": "Cursor-based pagination is a technique used in the Intercom API to navigate through large amounts of data.\nA \"cursor\" or pointer is used to keep track of the current position in the result set, allowing the API to return the data in small chunks or \"pages\" as needed.\n",
+        "nullable": true,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "the type of object `pages`.",
+            "example": "pages",
+            "enum": [
+              "pages"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "description": "The current page",
+            "example": 1
+          },
+          "next": {
+            "type": "object",
+            "nullable": true,
+            "description": "Fetch the next page by sending this `starting_after` cursor. Omitted on the last page.",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "description": "The number of the next page",
+                "example": 2
+              },
+              "starting_after": {
+                "type": "string",
+                "description": "The cursor to send in the next request to get the next page of results.",
+                "example": "your-cursor-from-response"
+              }
+            }
+          },
+          "per_page": {
+            "type": "integer",
+            "description": "Number of results per page",
+            "example": 2
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "Total number of pages",
+            "example": 13
+          }
+        }
+      },
+      "conversation_list_item": {
+        "title": "Conversation List Item",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "The data returned about your conversations when you list or search them.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Always conversation.",
+            "example": "conversation"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id representing the conversation.",
+            "example": "1295"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The title given to the conversation.",
+            "example": "Conversation Title"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the conversation was created.",
+            "example": 1663597223
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The last time the conversation was updated.",
+            "example": 1663597260
+          },
+          "waiting_since": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The last time a Contact responded to an Admin. In other words, the time a customer started waiting for a response. Set to null if last reply is from an Admin.",
+            "example": 1663597260
+          },
+          "snoozed_until": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "If set this is the time in the future when this conversation will be marked as open. i.e. it will be in a snoozed state until this time. i.e. it will be in a snoozed state until this time.",
+            "example": 1663597260
+          },
+          "open": {
+            "type": "boolean",
+            "description": "Indicates whether a conversation is open (true) or closed (false).",
+            "example": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "snoozed"
+            ],
+            "description": "Can be set to \"open\", \"closed\" or \"snoozed\".",
+            "example": "open"
+          },
+          "read": {
+            "type": "boolean",
+            "description": "Indicates whether a conversation has been read.",
+            "example": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
+            "description": "The priority level of the conversation. Returns one of none, low, medium, high, or urgent.",
+            "example": "high"
+          },
+          "admin_assignee_id": {
+            "type": "integer",
+            "description": "The id of the admin assigned to the conversation. If it's not assigned to an admin it will return 0.",
+            "example": 0
+          },
+          "team_assignee_id": {
+            "type": "integer",
+            "description": "The id of the team assigned to the conversation. If it's not assigned to a team it will return 0.",
+            "example": 5017691
+          },
+          "company": {
+            "$ref": "#/components/schemas/company",
+            "nullable": true,
+            "description": "The company associated with the conversation."
+          },
+          "tags": {
+            "$ref": "#/components/schemas/tags"
+          },
+          "conversation_rating": {
+            "$ref": "#/components/schemas/conversation_rating"
+          },
+          "source": {
+            "$ref": "#/components/schemas/conversation_source"
+          },
+          "contacts": {
+            "$ref": "#/components/schemas/conversation_contacts"
+          },
+          "teammates": {
+            "$ref": "#/components/schemas/conversation_teammates"
+          },
+          "custom_attributes": {
+            "$ref": "#/components/schemas/custom_attributes"
+          },
+          "first_contact_reply": {
+            "$ref": "#/components/schemas/conversation_first_contact_reply"
+          },
+          "sla_applied": {
+            "$ref": "#/components/schemas/sla_applied"
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/conversation_statistics"
+          },
+          "linked_objects": {
+            "$ref": "#/components/schemas/linked_object_list"
+          },
+          "ai_agent_participated": {
+            "type": "boolean",
+            "description": "Indicates whether the AI Agent participated in the conversation.",
+            "example": true
+          },
+          "ai_agent": {
+            "$ref": "#/components/schemas/ai_agent",
+            "nullable": true
+          },
+          "sales_agent_participated": {
+            "type": "boolean",
+            "description": "Indicates whether the Sales Agent participated in the conversation.",
+            "example": false
+          },
+          "sales_agent": {
+            "$ref": "#/components/schemas/sales_agent",
+            "nullable": true
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/conversation_channel"
+              }
+            ],
+            "type": "object",
+            "nullable": true,
+            "description": "The channel through which the conversation was initiated and its current channel."
+          },
+          "topics": {
+            "type": "object",
+            "description": "The topics of the conversation. An empty object when the workspace doesn't use topics.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Always `topic.list`.",
+                "example": "topic.list"
+              },
+              "topics": {
+                "type": "array",
+                "description": "The topics of the conversation.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Always `topic`.",
+                      "example": "topic"
+                    },
+                    "id": {
+                      "type": "integer",
+                      "description": "The id of the topic.",
+                      "example": 4521
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the topic.",
+                      "example": "Billing"
+                    }
+                  }
+                }
+              },
+              "total_count": {
+                "type": "integer",
+                "description": "The number of topics.",
+                "example": 1
+              }
+            }
+          },
+          "ticket": {
+            "type": "object",
+            "nullable": true,
+            "description": "The ticket details when the conversation is a ticket. `null` for any other conversation.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Always `ticket`.",
+                "example": "ticket"
+              },
+              "id": {
+                "type": "integer",
+                "description": "The id of the ticket's conversation.",
+                "example": 1295
+              },
+              "url": {
+                "type": "string",
+                "description": "The link to the ticket in the inbox.",
+                "example": "https://app.intercom.com/a/apps/abcd1234/conversations/1295"
+              },
+              "custom_attributes": {
+                "type": "object",
+                "description": "The ticket's attributes, keyed by attribute name.",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "description": "The value of the attribute.",
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        {
+                          "$ref": "#/components/schemas/file_attribute"
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "The data type of the attribute.",
+                      "example": "string"
+                    }
+                  }
+                }
+              },
+              "state": {
+                "type": "string",
+                "description": "The current state of the ticket.",
+                "example": "submitted"
+              },
+              "ticket_type": {
+                "type": "string",
+                "description": "The name of the ticket type.",
+                "example": "Bug report"
+              },
+              "ticket_type_description": {
+                "type": "string",
+                "description": "The description of the ticket type.",
+                "example": "Something is broken"
+              },
+              "ticket_type_emoji": {
+                "type": "string",
+                "nullable": true,
+                "description": "The emoji of the ticket type.",
+                "example": "🐛"
+              },
+              "ticket_custom_state_admin_label": {
+                "type": "string",
+                "nullable": true,
+                "description": "The label of the ticket's state as teammates see it.",
+                "example": "Submitted"
+              },
+              "ticket_custom_state_user_label": {
+                "type": "string",
+                "nullable": true,
+                "description": "The label of the ticket's state as the customer sees it.",
+                "example": "Received"
+              }
+            }
+          },
+          "external_references": {
+            "type": "array",
+            "description": "References linking this conversation to records in an external helpdesk or CRM system. Populated for Fin Standalone workspaces synced from an external platform; an empty array otherwise. Sorted alphabetically by `type` and capped at 20 entries.",
+            "items": {
+              "$ref": "#/components/schemas/conversation_external_reference"
+            },
+            "example": [
+              {
+                "type": "zendesk_ticket",
+                "id": "3633338"
+              },
+              {
+                "type": "zendesk_sunshine_conversation",
+                "id": "abc-def-uuid"
+              }
+            ]
+          },
+          "monitor_evaluations": {
+            "type": "array",
+            "description": "The latest QA monitor evaluation for each monitor that has evaluated this conversation, whatever its result. Only included when `include_monitors=true` is passed as a query parameter.",
+            "items": {
+              "$ref": "#/components/schemas/conversation_monitor_evaluation"
+            }
+          },
+          "scorecards": {
+            "type": "array",
+            "description": "QA scorecard results for this conversation. Only included when `include_scorecards=true` is passed as a query parameter.",
+            "items": {
+              "$ref": "#/components/schemas/conversation_scorecard"
+            }
+          }
+        }
+      },
+      "company": {
+        "title": "Company",
+        "type": "object",
+        "x-tags": [
+          "Companies"
+        ],
+        "description": "Companies allow you to represent organizations using your product. Each company will have its own description and be associated with contacts. You can fetch, create, update and list companies.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Value is `company`",
+            "enum": [
+              "company"
+            ],
+            "example": "company"
+          },
+          "id": {
+            "type": "string",
+            "description": "The Intercom defined id representing the company.",
+            "example": "531ee472cce572a6ec000006"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the company. Returned HTML-escaped, for example `&` as `&amp;`.",
+            "example": "Blue Sun"
+          },
+          "app_id": {
+            "type": "string",
+            "description": "The Intercom defined code of the workspace the company is associated to.",
+            "example": "ecahpwf5"
+          },
+          "plan": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Value is always \"plan\"",
+                "example": "plan"
+              },
+              "id": {
+                "type": "string",
+                "description": "The id of the plan",
+                "example": "269315"
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the plan",
+                "example": "Pro"
+              }
+            }
+          },
+          "company_id": {
+            "type": "string",
+            "description": "The company id you have defined for the company. Returned HTML-escaped, for example `&` as `&amp;`.",
+            "example": "6"
+          },
+          "remote_created_at": {
+            "type": "integer",
+            "description": "The time the company was created by you.",
+            "example": 1663597223
+          },
+          "created_at": {
+            "type": "integer",
+            "description": "The time the company was added in Intercom.",
+            "example": 1663597223
+          },
+          "updated_at": {
+            "type": "integer",
+            "description": "The last time the company was updated.",
+            "example": 1663597223
+          },
+          "last_request_at": {
+            "type": "integer",
+            "description": "The time the company last recorded making a request.",
+            "example": 1663597223
+          },
+          "size": {
+            "type": "integer",
+            "description": "The number of employees in the company.",
+            "example": 100
+          },
+          "website": {
+            "type": "string",
+            "description": "The URL for the company website.",
+            "example": "https://www.intercom.com"
+          },
+          "industry": {
+            "type": "string",
+            "description": "The industry that the company operates in.",
+            "example": "Software"
+          },
+          "monthly_spend": {
+            "type": "integer",
+            "description": "How much revenue the company generates for your business.",
+            "example": 100
+          },
+          "session_count": {
+            "type": "integer",
+            "description": "How many sessions the company has recorded.",
+            "example": 100
+          },
+          "user_count": {
+            "type": "integer",
+            "description": "The number of users in the company.",
+            "example": 100
+          },
+          "custom_attributes": {
+            "type": "object",
+            "description": "The custom attributes you have set on the company.",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "nullable": true
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "example": {
+              "paid_subscriber": true,
+              "monthly_spend": 155.5,
+              "team_mates": 9
+            }
+          },
+          "tags": {
+            "type": "object",
+            "description": "The list of tags associated with the company",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of the object",
+                "enum": [
+                  "tag.list"
+                ]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/tag_basic"
+                }
+              }
+            }
+          },
+          "segments": {
+            "type": "object",
+            "description": "Always returned empty. Fetch a company's segments with the list attached segments endpoint.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of the object",
+                "enum": [
+                  "segment.list"
+                ]
+              },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/segment"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "object",
+            "description": "The list of notes associated with the company",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of the object",
+                "enum": [
+                  "note.list"
+                ]
+              },
+              "data": {
+                "type": "array",
+                "description": "The notes on the company, newest first.",
+                "items": {
+                  "$ref": "#/components/schemas/company_note"
+                }
+              },
+              "url": {
+                "type": "string",
+                "description": "The relative URL of the company's notes.",
+                "example": "/companies/531ee472cce572a6ec000006/notes"
+              },
+              "total_count": {
+                "type": "integer",
+                "description": "The number of notes in `data`.",
+                "example": 1
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "Always `false`. Every note on the company is returned in `data`.",
+                "example": false
+              }
+            }
+          }
+        }
+      },
+      "contact_tags": {
+        "title": "Contact Tags",
+        "type": "object",
+        "nullable": true,
+        "description": "An object containing tags meta data about the tags that a contact has. Up to 10 will be displayed here. Use the url to get more.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "This object represents the tags attached to a contact.",
+            "items": {
+              "$ref": "#/components/schemas/addressable_list"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "url to get more tag resources for this contact",
+            "example": "/contacts/5ba682d23d7cf92bef87bfd4/tags"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Int representing the total number of tags attached to this contact",
+            "example": 100
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether there's more Addressable Objects to be viewed. If true, use the url to view all",
+            "example": true
+          }
+        }
+      },
+      "contact_notes": {
+        "title": "Contact notes",
+        "type": "object",
+        "nullable": false,
+        "description": "An object containing notes meta data about the notes that a contact has. Up to 10 will be displayed here. Use the url to get more.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "This object represents the notes attached to a contact.",
+            "items": {
+              "$ref": "#/components/schemas/addressable_list"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Url to get more company resources for this contact",
+            "example": "/contacts/5ba682d23d7cf92bef87bfd4/notes"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Int representing the total number of companyies attached to this contact",
+            "example": 100
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether there's more Addressable Objects to be viewed. If true, use the url to view all",
+            "example": true
+          }
+        }
+      },
+      "contact_companies": {
+        "title": "Contact companies",
+        "type": "object",
+        "nullable": false,
+        "description": "An object with metadata about companies attached to a contact . Up to 10 will be displayed here. Use the url to get more.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "An array of company data objects attached to the contact.",
+            "items": {
+              "$ref": "#/components/schemas/company_data"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Url to get more company resources for this contact",
+            "example": "/contacts/5ba682d23d7cf92bef87bfd4/companies"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Integer representing the total number of companies attached to this contact",
+            "example": 100
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether there's more Addressable Objects to be viewed. If true, use the url to view all",
+            "example": true
+          }
+        }
+      },
+      "contact_location": {
+        "title": "Contact Location",
+        "type": "object",
+        "nullable": false,
+        "description": "An object containing location meta data about a Intercom contact.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Always location",
+            "example": "location"
+          },
+          "country": {
+            "type": "string",
+            "nullable": true,
+            "description": "The country that the contact is located in",
+            "example": "Ireland"
+          },
+          "region": {
+            "type": "string",
+            "nullable": true,
+            "description": "The overal region that the contact is located in",
+            "example": "Dublin"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "description": "The city that the contact is located in",
+            "example": "Dublin"
+          },
+          "country_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "The ISO 3166-1 alpha-3 code of the country that the contact is located in",
+            "example": "IRL"
+          },
+          "continent_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "The code of the continent that the contact is located in",
+            "example": "EU"
+          }
+        }
+      },
+      "contact_social_profiles": {
+        "title": "Social Profile",
+        "type": "object",
+        "nullable": false,
+        "description": "An object containing social profiles that a contact has.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "A list of social profiles objects associated with the contact.",
+            "items": {
+              "$ref": "#/components/schemas/social_profile"
+            }
+          }
+        }
+      },
+      "contact_subscription_types": {
+        "title": "Contact Subscription Types",
+        "type": "object",
+        "nullable": false,
+        "description": "An object containing Subscription Types meta data about the SubscriptionTypes that a contact has.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the object",
+            "enum": [
+              "list"
+            ],
+            "example": "list"
+          },
+          "data": {
+            "type": "array",
+            "description": "This object represents the subscriptions attached to a contact.",
+            "items": {
+              "$ref": "#/components/schemas/addressable_list"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Url to get more subscription type resources for this contact",
+            "example": "/contacts/5ba682d23d7cf92bef87bfd4/subscriptions"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Int representing the total number of subscription types attached to this contact",
+            "example": 100
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether there's more Addressable Objects to be viewed. If true, use the url to view all",
+            "example": true
+          }
+        }
+      },
+      "merge_history_item": {
+        "title": "Merge History Item",
+        "type": "object",
+        "description": "A record of a contact that was merged into another contact.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of object.",
+            "example": "merge_history"
+          },
+          "source_contact_id": {
+            "type": "string",
+            "description": "The Intercom ID of the contact that was merged into this contact.",
+            "example": "5ba682d23d7cf92bef87bfd3"
+          },
+          "source_contact_role": {
+            "type": "string",
+            "description": "The role of the contact that was merged in.",
+            "enum": [
+              "lead",
+              "user"
+            ],
+            "example": "lead"
+          },
+          "merged_at": {
+            "type": "integer",
+            "nullable": true,
+            "format": "date-time",
+            "description": "(Unix timestamp in seconds) The time when the merge occurred.",
+            "example": 1571672154
+          }
+        }
+      },
+      "tags": {
+        "title": "Tags",
+        "type": "object",
+        "description": "A list of tags objects associated with a conversation, article or internal article",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the object",
+            "enum": [
+              "tag.list"
+            ],
+            "example": "tag.list"
+          },
+          "tags": {
+            "type": "array",
+            "description": "A list of tags objects associated with the object.",
+            "items": {
+              "$ref": "#/components/schemas/tag"
+            }
+          }
+        }
+      },
+      "conversation_rating": {
+        "title": "Conversation Rating",
+        "type": "object",
+        "nullable": true,
+        "description": "The Conversation Rating object which contains information on the rating and/or remark added by a Contact and the Admin assigned to the conversation.",
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "description": "The rating, between 1 and 5, for the conversation.",
+            "example": 5
+          },
+          "remark": {
+            "type": "string",
+            "description": "An optional field to add a remark to correspond to the number rating",
+            "example": ""
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the rating was requested in the conversation being rated.",
+            "example": 1671028894
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the rating was last updated.",
+            "example": 1671028894
+          },
+          "contact": {
+            "$ref": "#/components/schemas/contact_reference"
+          },
+          "teammate": {
+            "title": "Conversation Rating Teammate",
+            "type": "object",
+            "nullable": true,
+            "description": "The teammate, bot or workflow the rating is attributed to.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "admin",
+                  "team",
+                  "bot",
+                  "workflow"
+                ],
+                "description": "The type of the rated actor. `workflow` when a workflow requested the rating and no teammate took part.",
+                "example": "admin"
+              },
+              "id": {
+                "type": "string",
+                "description": "The unique identifier for the rated actor.",
+                "example": "123"
+              }
+            }
+          }
+        }
+      },
+      "conversation_source": {
+        "title": "Conversation source",
+        "type": "object",
+        "description": "The type of the conversation part that started this conversation. Can be Contact, Admin, Campaign, Automated or Operator initiated.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The origin of this conversation.",
+            "example": "email"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the source message.",
+            "example": "3"
+          },
+          "delivered_as": {
+            "type": "string",
+            "description": "How the conversation was initiated.",
+            "example": "operator_initiated"
+          },
+          "recipients": {
+            "type": "array",
+            "nullable": true,
+            "description": "The recipients of the source message. Only present for email conversations.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "The recipient type. One of `to`, `cc`, or `bcc`.",
+                  "example": "to"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "The recipient email address.",
+                  "example": "user@example.com"
+                },
+                "drop_reason": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "The reason this recipient was dropped, if applicable.",
+                  "example": null
+                }
+              }
+            }
+          },
+          "reply_to": {
+            "type": "array",
+            "nullable": true,
+            "description": "The Reply-To header addresses of the source message, where a reply will be routed. Can differ from the sender's From address. Only present for email conversations.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "The Reply-To email address.",
+                  "example": "replies@example.com"
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "The display name associated with the Reply-To address.",
+                  "example": "Support Team"
+                }
+              }
+            }
+          },
+          "subject": {
+            "type": "string",
+            "description": "Optional. The message subject. For Twitter, this will show a generic message regarding why the subject is obscured. In webhook payloads for API version 2.15+, this field returns plain text.",
+            "example": ""
+          },
+          "body": {
+            "type": "string",
+            "description": "The message body, which may contain HTML. For Twitter, this will show a generic message regarding why the body is obscured. In webhook payloads for API version 2.15+, this field returns plain text.",
+            "example": "<p>Hey there!</p>"
+          },
+          "author": {
+            "$ref": "#/components/schemas/conversation_source_author"
+          },
+          "attachments": {
+            "type": "array",
+            "description": "A list of attachments for the part.",
+            "items": {
+              "$ref": "#/components/schemas/part_attachment"
+            }
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The URL where the conversation was started. For Twitter, Email, and Bots, this will be blank.",
+            "example": null
+          },
+          "redacted": {
+            "type": "boolean",
+            "description": "Whether or not the source message has been redacted. Only applicable for contact initiated messages.",
+            "example": false
+          },
+          "email_message_metadata": {
+            "$ref": "#/components/schemas/source_email_message_metadata"
+          }
+        }
+      },
+      "conversation_contacts": {
+        "title": "Contacts",
+        "type": "object",
+        "description": "The list of contacts (users or leads) involved in this conversation. This will only contain one customer unless more were added via the group conversation feature.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "",
+            "enum": [
+              "contact.list"
+            ],
+            "example": "contact.list"
+          },
+          "contacts": {
+            "type": "array",
+            "description": "The list of contacts (users or leads) involved in this conversation. This will only contain one customer unless more were added via the group conversation feature.",
+            "items": {
+              "$ref": "#/components/schemas/contact_reference"
+            }
+          }
+        }
+      },
+      "conversation_teammates": {
+        "title": "Conversation teammates",
+        "type": "object",
+        "nullable": true,
+        "description": "The list of teammates who participated in the conversation (wrote at least one conversation part).",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the object - `admin.list`.",
+            "example": "admin.list"
+          },
+          "admins": {
+            "type": "array",
+            "description": "The list of teammates who participated in the conversation (wrote at least one conversation part).",
+            "items": {
+              "$ref": "#/components/schemas/reference"
+            }
+          }
+        }
+      },
+      "custom_attributes": {
+        "title": "Custom Attributes",
+        "type": "object",
+        "description": "An object containing the custom attributes on a conversation as key-value pairs. For relationship attributes the value is a list of custom object instance models. System-defined attributes such as \"AI Topic and Subtopic\", \"CX Score rating\", \"CX Score explanation\" and \"CX Score reasons\" may also be included.",
+        "properties": {
+          "AI Topic and Subtopic": {
+            "type": "array",
+            "readOnly": true,
+            "description": "Read-only AI Insights classification of the conversation. Present only with the AI add-on; omitted when the conversation has no classification.",
+            "example": [
+              {
+                "topic_name": "Billing",
+                "subtopic_name": "Payment Issues",
+                "id": 42
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ai_topic_subtopic"
+            }
+          },
+          "CX Score reasons": {
+            "type": "array",
+            "readOnly": true,
+            "description": "Read-only reasons behind the conversation's CX Score. Intercom generates this attribute, so it cannot be set. Omitted when the conversation has no CX Score reasons.",
+            "example": [
+              {
+                "name": "Resolution speed",
+                "value": "Fast"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/cx_score_reason"
+            }
+          }
+        },
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/components/schemas/datetime"
+            },
+            {
+              "$ref": "#/components/schemas/custom_object_instance_list"
+            }
+          ]
+        },
+        "example": {
+          "paid_subscriber": true,
+          "monthly_spend": 155.5,
+          "team_mates": 9,
+          "start_date_iso8601": "2023-03-04T09:46:14Z",
+          "end_date_timestamp": 1677923174,
+          "CX Score rating": 4,
+          "CX Score explanation": "The conversation was resolved quickly and the customer expressed satisfaction with the outcome.",
+          "AI Topic and Subtopic": [
+            {
+              "topic_name": "Billing",
+              "subtopic_name": "Payment Issues",
+              "id": 42
+            }
+          ],
+          "CX Score reasons": [
+            {
+              "name": "Resolution speed",
+              "value": "Fast"
+            }
+          ]
+        }
+      },
+      "conversation_first_contact_reply": {
+        "title": "First contact reply",
+        "type": "object",
+        "nullable": true,
+        "description": "An object containing information on the first users message. For a contact initiated message this will represent the users original message.",
+        "properties": {
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "",
+            "example": 1663597223
+          },
+          "type": {
+            "type": "string",
+            "description": "",
+            "example": "conversation"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "",
+            "example": "https://developers.intercom.com/"
+          }
+        }
+      },
+      "sla_applied": {
+        "title": "Applied SLA",
+        "type": "object",
+        "nullable": true,
+        "description": "The SLA Applied object contains the details for which SLA has been applied to this conversation.\nImportant: if there are any canceled sla_events for the conversation - meaning an SLA has been manually removed from a conversation, the sla_status will always be returned as null.\n",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "object type",
+            "example": "conversation_sla_summary"
+          },
+          "sla_name": {
+            "type": "string",
+            "description": "The name of the SLA as given by the teammate when it was created.",
+            "example": ""
+          },
+          "sla_status": {
+            "type": "string",
+            "enum": [
+              "hit",
+              "missed",
+              "canceled",
+              "active"
+            ],
+            "description": "SLA statuses:\n            - `hit`: If there’s at least one hit event in the underlying sla_events table, and no “missed” or “canceled” events for the conversation.\n            - `missed`: If there are any missed sla_events for the conversation and no canceled events. If there’s even a single missed sla event, the status will always be missed. A missed status is not applied when the SLA expires, only the next time a teammate replies.\n            - `active`: An SLA has been applied to a conversation, but has not yet been fulfilled. SLA status is active only if there are no “hit, “missed”, or “canceled” events.",
+            "example": "hit"
+          }
+        }
+      },
+      "conversation_statistics": {
+        "title": "Conversation statistics",
+        "type": "object",
+        "nullable": true,
+        "description": "A Statistics object containing all information required for reporting, with timestamps and calculated metrics.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "",
+            "example": "conversation_statistics"
+          },
+          "time_to_assignment": {
+            "type": "integer",
+            "description": "Duration until last assignment before first admin reply. In seconds.",
+            "example": 2310
+          },
+          "time_to_admin_reply": {
+            "type": "integer",
+            "description": "Duration until first admin reply. Subtracts out of business hours. In seconds.",
+            "example": 2310
+          },
+          "time_to_first_close": {
+            "type": "integer",
+            "description": "Duration until conversation was closed first time. Subtracts out of business hours. In seconds.",
+            "example": 2310
+          },
+          "time_to_last_close": {
+            "type": "integer",
+            "description": "Duration until conversation was closed last time. Subtracts out of business hours. In seconds.",
+            "example": 2310
+          },
+          "median_time_to_reply": {
+            "type": "integer",
+            "description": "Median based on all admin replies after a contact reply. Subtracts out of business hours. In seconds.",
+            "example": 2310
+          },
+          "first_contact_reply_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of first text conversation part from a contact.",
+            "example": 1663597233
+          },
+          "first_assignment_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of first assignment after first_contact_reply_at.",
+            "example": 1663597233
+          },
+          "first_admin_reply_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of first admin reply after first_contact_reply_at.",
+            "example": 1663597233
+          },
+          "first_close_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of first close after first_contact_reply_at.",
+            "example": 1663597233
+          },
+          "last_assignment_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of last assignment after first_contact_reply_at.",
+            "example": 1663597233
+          },
+          "last_assignment_admin_reply_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of first admin reply since most recent assignment.",
+            "example": 1663597233
+          },
+          "last_contact_reply_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of the last conversation part from a contact.",
+            "example": 1663597233
+          },
+          "last_admin_reply_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of the last conversation part from an admin.",
+            "example": 1663597233
+          },
+          "last_close_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "Time of the last conversation close.",
+            "example": 1663597233
+          },
+          "last_closed_by_id": {
+            "type": "string",
+            "description": "The last admin who closed the conversation. Returns a reference to an Admin object.",
+            "example": "c3po"
+          },
+          "count_reopens": {
+            "type": "integer",
+            "description": "Number of reopens after first_contact_reply_at.",
+            "example": 1
+          },
+          "count_assignments": {
+            "type": "integer",
+            "description": "Number of assignments after first_contact_reply_at.",
+            "example": 1
+          },
+          "count_conversation_parts": {
+            "type": "integer",
+            "description": "Total number of conversation parts.",
+            "example": 1
+          },
+          "assigned_team_first_response_time": {
+            "type": "array",
+            "description": "An array of conversation response time objects",
+            "items": {
+              "$ref": "#/components/schemas/conversation_response_time"
+            }
+          },
+          "assigned_team_first_response_time_in_office_hours": {
+            "type": "array",
+            "description": "An array of conversation response time objects within office hours",
+            "items": {
+              "$ref": "#/components/schemas/conversation_response_time"
+            }
+          },
+          "handling_time": {
+            "type": "integer",
+            "description": "Time from conversation assignment to conversation close in seconds.",
+            "example": 2310
+          },
+          "adjusted_handling_time": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Adjusted handling time for conversation in seconds. This is the active handling time excluding idle periods when teammates are not actively working on the conversation.",
+            "example": 1800
+          }
+        }
+      },
+      "linked_object_list": {
+        "title": "Linked Objects",
+        "type": "object",
+        "description": "An object containing metadata about linked conversations and linked tickets. Up to 1000 can be returned.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Always list.",
+            "enum": [
+              "list"
+            ],
+            "example": "list"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "The total number of linked objects.",
+            "example": 100
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether or not there are more linked objects than returned.",
+            "example": false
+          },
+          "data": {
+            "type": "array",
+            "description": "An array containing the linked conversations and linked tickets.",
+            "items": {
+              "$ref": "#/components/schemas/linked_object"
+            }
+          }
+        }
+      },
+      "ai_agent": {
+        "title": "AI Agent",
+        "type": "object",
+        "x-tags": [
+          "Ai Agent"
+        ],
+        "description": "Data related to AI Agent involvement in the conversation.",
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "The type of the source that triggered AI Agent involvement in the conversation.",
+            "enum": [
+              "essentials_plan_setup",
+              "profile",
+              "workflow",
+              "workflow_preview",
+              "fin_preview"
+            ],
+            "example": "workflow"
+          },
+          "source_title": {
+            "type": "string",
+            "description": "The title of the source that triggered AI Agent involvement in the conversation. If this is `essentials_plan_setup` then it will return `null`.",
+            "example": "My AI Workflow",
+            "nullable": true
+          },
+          "last_answer_type": {
+            "type": "string",
+            "description": "The type of the last answer delivered by AI Agent. If no answer was delivered then this will return `null`",
+            "enum": [
+              null,
+              "ai_answer",
+              "custom_answer"
+            ],
+            "example": "ai_answer",
+            "nullable": true
+          },
+          "resolution_state": {
+            "type": "string",
+            "description": "The resolution state of AI Agent. If no AI or custom answer has been delivered then this will return `null`.",
+            "enum": [
+              "assumed_resolution",
+              "confirmed_resolution",
+              "escalated",
+              "negative_feedback",
+              "procedure_handoff",
+              null
+            ],
+            "example": "assumed_resolution",
+            "nullable": true
+          },
+          "rating": {
+            "type": "integer",
+            "description": "The customer satisfaction rating given to AI Agent, from 1-5.",
+            "example": 4,
+            "nullable": true
+          },
+          "rating_remark": {
+            "type": "string",
+            "description": "The customer satisfaction rating remark given to AI Agent.",
+            "example": "Very helpful!",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time when the AI agent rating was created.",
+            "example": 1663597260,
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time when the AI agent rating was last updated.",
+            "example": 1663597260,
+            "nullable": true
+          },
+          "content_sources": {
+            "$ref": "#/components/schemas/content_sources_list"
+          }
+        }
+      },
+      "sales_agent": {
+        "title": "Sales Agent",
+        "type": "object",
+        "x-tags": [
+          "Sales Agent"
+        ],
+        "description": "Data related to Sales Agent involvement in the conversation.",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "nullable": true,
+            "description": "The fixed outcome of the sales agent interaction, used for billing and tracking.",
+            "enum": [
+              "qualified",
+              "disqualified",
+              "product_discovery",
+              "escalated_to_support",
+              "spam"
+            ],
+            "example": "qualified"
+          },
+          "routing_outcome": {
+            "type": "string",
+            "nullable": true,
+            "description": "The identifier of the user-defined routing outcome selected by the sales agent.",
+            "example": "enterprise_sales"
+          },
+          "collected_data": {
+            "type": "object",
+            "nullable": true,
+            "description": "A flat key-value map of memory fields collected by the sales agent during the conversation.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "email": "user@example.com",
+              "company.name": "Acme Inc"
+            }
+          }
+        }
+      },
+      "conversation_channel": {
+        "title": "Conversation Channel",
+        "type": "object",
+        "description": "The channel through which a conversation was originally initiated and its current channel.",
+        "properties": {
+          "initial": {
+            "type": "string",
+            "nullable": true,
+            "description": "The channel through which the conversation was originally initiated. Possible values include `messenger`, `zendesk_sunshine`, `zendesk_ticket`, `twitter`, `email`. Returns `null` if channel data is unavailable.",
+            "example": "messenger"
+          },
+          "current": {
+            "type": "string",
+            "nullable": true,
+            "description": "The current channel of the conversation. May differ from `initial` if the conversation was migrated between channels. Returns `null` if channel data is unavailable.",
+            "example": "messenger"
+          }
+        }
+      },
+      "file_attribute": {
+        "title": "File",
+        "type": "object",
+        "description": "The value describing a file upload set for a custom attribute",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "upload"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the file",
+            "example": "Screenshot.png"
+          },
+          "url": {
+            "type": "string",
+            "description": "The url of the file. This is a temporary URL and will expire after 30 minutes.",
+            "example": "https://intercom-attachments-1.com/.../Screenshot.png"
+          },
+          "content_type": {
+            "type": "string",
+            "description": "The type of file",
+            "example": "image/png"
+          },
+          "filesize": {
+            "type": "integer",
+            "description": "The size of the file in bytes",
+            "example": 11308309
+          },
+          "width": {
+            "type": "integer",
+            "description": "The width of the file in pixels, if applicable",
+            "example": 3024
+          },
+          "height": {
+            "type": "integer",
+            "description": "The height of the file in pixels, if applicable",
+            "example": 1964
+          }
+        }
+      },
+      "conversation_external_reference": {
+        "title": "Conversation External Reference",
+        "type": "object",
+        "description": "A reference linking a conversation to a record in an external helpdesk or CRM system, surfaced for Fin Standalone workspaces.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of external system the reference points to. Possible values include `zendesk_ticket`, `zendesk_sunshine_conversation`, `salesforce_case`, `salesforce_in_app_message_conversation`, `freshdesk_ticket`, `freshchat_conversation`, `hubspot_conversation`, `custom_helpdesk_conversation`, `api_conversation`.",
+            "example": "zendesk_ticket"
+          },
+          "id": {
+            "type": "string",
+            "description": "The identifier of the record in the external system. Always serialized as a string, since some external IDs exceed 32-bit integer range.",
+            "example": "3633338"
+          }
+        }
+      },
+      "conversation_monitor_evaluation": {
+        "title": "Conversation Monitor Evaluation",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "A QA monitor evaluation of this conversation. Returned in the `monitor_evaluations` array on conversation responses when `include_monitors=true` is passed.",
+        "properties": {
+          "monitor_id": {
+            "type": "string",
+            "description": "The unique identifier of the monitor that produced this evaluation.",
+            "example": "12345"
+          },
+          "monitor_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the monitor at the time of evaluation. Null if the monitor has since been deleted.",
+            "example": "Customer complaint handling"
+          },
+          "monitor_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "The type of the monitor. Null if the monitor has since been deleted.",
+            "example": "prompt"
+          },
+          "result": {
+            "type": "string",
+            "description": "The evaluation outcome reported by the monitor: `included` (the conversation matches the monitor's criteria), `excluded`, `error` or `awaiting_async_data`.",
+            "example": "included"
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true,
+            "description": "The reasoning provided by the monitor for its result. May be null if no reasoning was generated.",
+            "example": "The customer mentioned wanting a refund without resolution."
+          },
+          "evaluated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The time the monitor evaluated this conversation. Null in the rare case the underlying record's timestamp is not yet set.",
+            "example": 1719493065
+          }
+        }
+      },
+      "conversation_scorecard": {
+        "title": "Conversation Scorecard",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "A QA scorecard result for this conversation. Returned in the `scorecards` array on conversation responses when `include_scorecards=true` is passed.",
+        "properties": {
+          "scorecard_id": {
+            "type": "string",
+            "description": "The unique identifier of the scorecard definition.",
+            "example": "67890"
+          },
+          "scorecard_version_id": {
+            "type": "string",
+            "description": "The unique identifier of the specific scorecard version that produced this result.",
+            "example": "67891"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the scorecard.",
+            "example": "Standard QA Review"
+          },
+          "scorecard_type": {
+            "type": "string",
+            "description": "The type of scorecard.",
+            "example": "human"
+          },
+          "passed": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the conversation passed the scorecard. Null when the scorecard has not been scored.",
+            "example": true
+          },
+          "score": {
+            "type": "number",
+            "nullable": true,
+            "description": "The numeric score for the scorecard. Null when the scorecard has not been scored.",
+            "example": 0.85
+          },
+          "ai_score": {
+            "type": "number",
+            "nullable": true,
+            "description": "The numeric score produced by AI evaluation, if applicable. Null when not AI-scored.",
+            "example": 0.9
+          },
+          "evaluated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The time the scorecard was last evaluated. Null in the rare case the underlying record's timestamp is not yet set.",
+            "example": 1719493065
+          },
+          "reviewed_teammate": {
+            "$ref": "#/components/schemas/conversation_scorecard_reviewed_teammate"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/conversation_scorecard_reviewer"
+          },
+          "review_status": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "unreviewed",
+              "submitted",
+              "passed_review",
+              "needs_fix",
+              "wont_fix",
+              "fix_complete"
+            ],
+            "description": "The status of the review of this scorecard, as shown in the QA reviews list in Intercom. `unreviewed` while the review is waiting for a reviewer's verdict; `submitted` once the review has been submitted; `passed_review`, `needs_fix`, `wont_fix` or `fix_complete` when a teammate set a specific outcome. Null when no review exists for this scorecard.",
+            "example": "submitted"
+          },
+          "submitted_by": {
+            "$ref": "#/components/schemas/conversation_scorecard_submitted_by"
+          },
+          "revised_by": {
+            "$ref": "#/components/schemas/conversation_scorecard_revised_by"
+          },
+          "notes": {
+            "type": "array",
+            "description": "The notes teammates left on the QA review linked to this scorecard entry. Empty when the scorecard has no linked review.",
+            "example": [
+              {
+                "id": "9001",
+                "created_at": 1734537900,
+                "updated_at": 1734537900,
+                "author": {
+                  "type": "admin",
+                  "admin_id": "884120017"
+                },
+                "body": "Great empathy in the second reply."
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/conversation_scorecard_note"
+            }
+          },
+          "evaluators": {
+            "type": "array",
+            "description": "Per-evaluator results within this scorecard.",
+            "items": {
+              "$ref": "#/components/schemas/conversation_scorecard_evaluator"
+            }
+          }
+        }
+      },
+      "tag_basic": {
+        "title": "Tag",
+        "type": "object",
+        "x-tags": [
+          "Tags"
+        ],
+        "description": "A tag allows you to label your contacts, companies, and conversations and list them using that tag.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "value is \"tag\"",
+            "example": "tag"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the tag",
+            "example": "123456"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the tag",
+            "example": "Test tag"
+          }
+        }
+      },
+      "segment": {
+        "title": "Segment",
+        "type": "object",
+        "x-tags": [
+          "Segments"
+        ],
+        "description": "A segment is a group of your contacts defined by the rules that you set.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of object.",
+            "enum": [
+              "segment"
+            ],
+            "example": "segment"
+          },
+          "id": {
+            "type": "string",
+            "description": "The unique identifier representing the segment.",
+            "example": "56203d253cba154d39010062"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the segment.",
+            "example": "Active"
+          },
+          "created_at": {
+            "type": "integer",
+            "description": "The time the segment was created.",
+            "example": 1394621988
+          },
+          "updated_at": {
+            "type": "integer",
+            "description": "The time the segment was updated.",
+            "example": 1394622004
+          },
+          "person_type": {
+            "type": "string",
+            "description": "Type of the contact: contact (lead) or user.",
+            "enum": [
+              "contact",
+              "user"
+            ],
+            "example": "contact"
+          },
+          "count": {
+            "type": "integer",
+            "description": "The number of items in the user segment. It's returned when the request has `include_count` with a value. A company segment only gets a count when a contact segment has the same name, and it shows that segment's count.",
+            "example": 3,
+            "nullable": true
+          }
+        }
+      },
+      "company_note": {
+        "title": "Company Note",
+        "type": "object",
+        "x-tags": [
+          "Notes"
+        ],
+        "description": "A note as it appears inside a company's `notes` list. Fetch the full note with the retrieve note endpoint.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "String representing the object's type. Always has the value `note`.",
+            "example": "note"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the note.",
+            "example": "17495962"
+          },
+          "url": {
+            "type": "string",
+            "description": "The relative URL of the note.",
+            "example": "/notes/17495962"
+          },
+          "body": {
+            "type": "string",
+            "description": "The body text of the note.",
+            "example": "<p>Text for the note.</p>"
+          }
+        }
+      },
+      "addressable_list": {
+        "title": "Addressable List",
+        "type": "object",
+        "nullable": false,
+        "description": "A list used to access other resources from a parent model.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "The addressable object type",
+            "example": "note"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the addressable object",
+            "example": "123"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Url to get more company resources for this contact",
+            "example": "/contacts/5ba682d23d7cf92bef87bfd4/notes"
+          }
+        }
+      },
+      "company_data": {
+        "title": "Company Data",
+        "type": "object",
+        "description": "An object containing data about the companies that a contact is associated with.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the company which is given by Intercom.",
+            "example": "5ba682d23d7cf92bef87bfd4"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the object. Always company.",
+            "enum": [
+              "company"
+            ],
+            "example": "company"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The relative URL of the company.",
+            "example": "/companies/5ba682d23d7cf92bef87bfd4"
+          }
+        }
+      },
+      "social_profile": {
+        "title": "Social Profile",
+        "type": "object",
+        "description": "A Social Profile allows you to label your contacts, companies, and conversations and list them using that Social Profile.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "value is \"social_profile\"",
+            "example": "social_profile"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the Social media profile",
+            "example": "Facebook"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The name of the Social media profile",
+            "example": "http://twitter.com/th1sland"
+          }
+        }
+      },
+      "tag": {
+        "title": "Tag",
+        "type": "object",
+        "x-tags": [
+          "Tags"
+        ],
+        "description": "A tag allows you to label your contacts, companies, conversations, tickets, articles, internal articles, content snippets and external pages, and list them using that tag.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "value is \"tag\"",
+            "example": "tag"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the tag",
+            "example": "123456"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the tag",
+            "example": "Test tag"
+          },
+          "applied_at": {
+            "type": "integer",
+            "format": "timestamp",
+            "nullable": true,
+            "description": "The time when the tag was applied to the object. Only present when the tag is returned as part of a tagging operation on a contact, conversation, ticket, article, internal article, content snippet, or external page, when listing the tags on a contact, or when it is returned as part of an external page. `null` when the tag has just been removed from an article, internal article, content snippet or external page. Removing a tag from a contact, conversation or ticket returns the original value.",
+            "example": 1663597223
+          },
+          "applied_by": {
+            "type": "object",
+            "nullable": true,
+            "description": "The admin who applied the tag. Only present when the tag is returned as part of a tagging operation on a contact, conversation, ticket, article, internal article, content snippet, or external page, when listing the tags on a contact, or when it is returned as part of an external page. `null` when the tag has just been removed from an article, internal article, content snippet or external page. Removing a tag from a contact, conversation or ticket returns the original value. When no admin is recorded, `type` is `nobody_admin` and `id` is `null`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/reference"
+              }
+            ]
+          }
+        }
+      },
+      "contact_reference": {
+        "title": "Contact Reference",
+        "type": "object",
+        "description": "reference to contact object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "always contact",
+            "enum": [
+              "contact"
+            ],
+            "example": "contact"
+          },
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the contact which is given by Intercom.",
+            "example": "5ba682d23d7cf92bef87bfd4"
+          },
+          "external_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unique identifier for the contact which is provided by the Client.",
+            "example": "70"
+          }
+        }
+      },
+      "conversation_source_author": {
+        "title": "Conversation source author",
+        "type": "object",
+        "description": "The author who started the conversation. Can be a Contact, Admin, or Bot.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the author.",
+            "example": "admin"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the author.",
+            "example": "274"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the author.",
+            "example": "Jane Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "The email of the author.",
+            "example": "jane.doe@example.com"
+          }
+        }
+      },
+      "part_attachment": {
+        "title": "Part attachment",
+        "type": "object",
+        "description": "The file attached to a part",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of attachment",
+            "example": "upload"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the attachment",
+            "example": "example.png"
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL of the attachment",
+            "example": "https://picsum.photos/200/300"
+          },
+          "content_type": {
+            "type": "string",
+            "description": "The content type of the attachment",
+            "example": "image/png"
+          },
+          "filesize": {
+            "type": "integer",
+            "description": "The size of the attachment",
+            "example": 100
+          },
+          "width": {
+            "type": "integer",
+            "description": "The width of the attachment",
+            "example": 100
+          },
+          "height": {
+            "type": "integer",
+            "description": "The height of the attachment",
+            "example": 100
+          }
+        }
+      },
+      "source_email_message_metadata": {
+        "title": "Email Message Metadata",
+        "type": "object",
+        "description": "Contains metadata if the message was sent as an email",
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unique identifier for the email message as specified in the Message-ID header",
+            "example": "<CADKw7xrXzqSn8v3mP8K8Q8yZ6K8Q8yZ6@mail.gmail.com>"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject of the email",
+            "example": "Question about my order"
+          },
+          "email_address_headers": {
+            "title": "Email Address Headers",
+            "type": "array",
+            "description": "A list of an email address headers.",
+            "items": {
+              "$ref": "#/components/schemas/email_address_header"
+            }
+          },
+          "history": {
+            "type": "string",
+            "description": "The HTML content of any quoted or forwarded email history from the initial inbound message",
+            "example": "<div><span>On Jan 28, wrote:</span><blockquote>Previous thread</blockquote></div>"
+          }
+        }
+      },
+      "reference": {
+        "title": "Reference",
+        "type": "object",
+        "description": "reference to another object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "",
+            "example": "contact"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "",
+            "example": "1a2b3c"
+          }
+        }
+      },
+      "ai_topic_subtopic": {
+        "title": "AI Topic and Subtopic",
+        "type": "object",
+        "description": "A single AI-generated topic and subtopic classification for a conversation. Surfaced inside `custom_attributes` under the \"AI Topic and Subtopic\" key as an array of these objects. Requires the AI add-on; the key is omitted when the conversation has no classification.",
+        "properties": {
+          "topic_name": {
+            "type": "string",
+            "description": "The name of the AI-generated topic.",
+            "example": "Billing"
+          },
+          "subtopic_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the AI-generated subtopic, if any.",
+            "example": "Payment Issues"
+          },
+          "id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The id of the subtopic.",
+            "example": 42
+          }
+        }
+      },
+      "cx_score_reason": {
+        "title": "CX Score reason",
+        "type": "object",
+        "description": "A single reason behind a conversation's CX Score. Surfaced inside `custom_attributes` under the \"CX Score reasons\" key as an array of these objects.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the reason.",
+            "example": "Resolution speed"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value recorded for the reason.",
+            "example": "Fast"
+          }
+        }
+      },
+      "datetime": {
+        "oneOf": [
+          {
+            "title": "string",
+            "type": "string",
+            "format": "date-time",
+            "description": "A date and time following the ISO8601 notation."
+          },
+          {
+            "title": "integer",
+            "type": "integer",
+            "description": "A date and time as UNIX timestamp notation."
+          }
+        ]
+      },
+      "custom_object_instance_list": {
+        "title": "Custom Object Instances",
+        "type": "object",
+        "description": "The list of associated custom object instances for a given reference attribute on the parent object.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "order.list"
+          },
+          "instances": {
+            "type": "array",
+            "description": "The list of associated custom object instances for a given reference attribute on the parent object.",
+            "items": {
+              "$ref": "#/components/schemas/custom_object_instance"
+            }
+          }
+        }
+      },
+      "conversation_response_time": {
+        "title": "Conversation response time",
+        "type": "object",
+        "description": "Details of first response time of assigned team in seconds.",
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "description": "Id of the assigned team.",
+            "example": 100
+          },
+          "team_name": {
+            "type": "string",
+            "description": "Name of the assigned Team, null if team does not exist, Unassigned if no team is assigned.",
+            "example": "Team One"
+          },
+          "response_time": {
+            "type": "integer",
+            "description": "First response time of assigned team in seconds.",
+            "example": 2310
+          }
+        }
+      },
+      "linked_object": {
+        "title": "Linked Object",
+        "type": "object",
+        "description": "A linked conversation or ticket.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "ticket or conversation",
+            "enum": [
+              "ticket",
+              "conversation"
+            ],
+            "example": "ticket"
+          },
+          "id": {
+            "type": "string",
+            "description": "The ID of the linked object",
+            "example": "7583"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the Linked Ticket Object.",
+            "enum": [
+              "Customer",
+              "Back-office",
+              "Tracker",
+              null
+            ],
+            "example": "Customer",
+            "nullable": true
+          }
+        }
+      },
+      "content_sources_list": {
+        "title": "Content Source List",
+        "nullable": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "content_source.list"
+            ],
+            "example": "content_source.list"
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "The total number of content sources used by AI Agent in the conversation.",
+            "example": 1
+          },
+          "content_sources": {
+            "type": "array",
+            "description": "The content sources used by AI Agent in the conversation.",
+            "items": {
+              "$ref": "#/components/schemas/content_source"
+            }
+          }
+        }
+      },
+      "conversation_scorecard_reviewed_teammate": {
+        "title": "Reviewed Teammate",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "The teammate (or AI agent) whose handling of the conversation was reviewed by this scorecard.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "admin"
+            ],
+            "description": "The kind of reviewee. `ai` if the conversation was handled by Fin or scored without a specific teammate; `admin` if a specific teammate was reviewed.",
+            "example": "admin"
+          },
+          "admin_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the admin who was reviewed. Present only when `type` is `admin`.",
+            "example": "991267715"
+          }
+        }
+      },
+      "conversation_scorecard_reviewer": {
+        "title": "Reviewer",
+        "type": "object",
+        "nullable": true,
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "Who the review of this scorecard is assigned to. `ai` when it is assigned to Fin; `admin` when it is assigned to a teammate. Null when no review exists for this scorecard or the review is unassigned.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "admin"
+            ],
+            "description": "The kind of reviewer. `ai` if the review is assigned to Fin; `admin` if it is assigned to a teammate.",
+            "example": "admin"
+          },
+          "admin_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the admin the review is assigned to. Present only when `type` is `admin`.",
+            "example": "884120017"
+          }
+        }
+      },
+      "conversation_scorecard_submitted_by": {
+        "title": "Submitted By",
+        "type": "object",
+        "nullable": true,
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "Who last submitted the review of this scorecard, which can differ from the `reviewer` it is assigned to. `ai` when Fin submitted it; `admin` when a teammate did. Null while the review is unreviewed or when no review exists for this scorecard.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "admin"
+            ],
+            "description": "The kind of submitter. `ai` if Fin submitted the review; `admin` if a teammate did.",
+            "example": "admin"
+          },
+          "admin_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the admin who submitted the review. Present only when `type` is `admin`.",
+            "example": "884120017"
+          }
+        }
+      },
+      "conversation_scorecard_revised_by": {
+        "title": "Revised By",
+        "type": "object",
+        "nullable": true,
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "Who last changed the review of this scorecard after it was submitted. `ai` when Fin made the change; `admin` when a teammate did. Null while the review is unreviewed, when it has not been changed since it was submitted, or when no review exists for this scorecard.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "admin"
+            ],
+            "description": "The kind of reviser. `ai` if Fin changed the review; `admin` if a teammate did.",
+            "example": "admin"
+          },
+          "admin_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the admin who last changed the review. Present only when `type` is `admin`.",
+            "example": "884120017"
+          }
+        }
+      },
+      "conversation_scorecard_note": {
+        "title": "Scorecard Note",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "A note a teammate left on the QA review of this scorecard.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id of the note.",
+            "example": "9001"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the note was created.",
+            "example": 1734537900
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the note was last edited. Equal to `created_at` when the note has never been edited.",
+            "example": 1734537900
+          },
+          "author": {
+            "$ref": "#/components/schemas/conversation_scorecard_note_author"
+          },
+          "body": {
+            "type": "string",
+            "description": "The text of the note exactly as the teammate entered it. Plain text; it is not rendered as HTML.",
+            "example": "Great empathy in the second reply."
+          }
+        }
+      },
+      "conversation_scorecard_evaluator": {
+        "title": "Conversation Scorecard Evaluator",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "A single evaluator within a scorecard, including its result for this conversation.",
+        "properties": {
+          "evaluator_id": {
+            "type": "string",
+            "description": "The unique identifier of the evaluator (criterion) within the scorecard.",
+            "example": "54321"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the evaluator (criterion). Null if the evaluator's name could not be resolved.",
+            "example": "Tone of voice"
+          },
+          "result": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/conversation_scorecard_evaluator_result"
+              }
+            ],
+            "nullable": true,
+            "description": "The evaluator's result for this conversation. Null if the evaluator was not scored."
+          }
+        }
+      },
+      "email_address_header": {
+        "title": "Email Address Header",
+        "type": "object",
+        "description": "Contains data for an email address header for a conversation part that was sent as an email.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of email address header",
+            "example": "from"
+          },
+          "email_address": {
+            "type": "string",
+            "description": "The email address",
+            "example": "jdoe@example.com"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name associated with the email address",
+            "example": "Joe Example"
+          }
+        }
+      },
+      "custom_object_instance": {
+        "title": "Custom Object Instance",
+        "type": "object",
+        "x-tags": [
+          "Custom Object Instances"
+        ],
+        "nullable": true,
+        "description": "A Custom Object Instance represents an instance of a custom object type. This allows you to create and set custom attributes to store data about your customers that is not already captured by Intercom. The parent object includes recommended default attributes and you can add your own custom attributes.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The Intercom defined id representing the custom object instance.",
+            "example": 16032025
+          },
+          "external_id": {
+            "type": "string",
+            "description": "The id you have defined for the custom object instance.",
+            "example": "0001d1c1e65a7a19e9f59ae2"
+          },
+          "external_created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The time when the Custom Object instance was created in the external system it originated from.",
+            "example": 1571672154
+          },
+          "external_updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The time when the Custom Object instance was last updated in the external system it originated from.",
+            "example": 1571672154
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the attribute was created as a UTC Unix timestamp",
+            "example": 1671028894
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "date-time",
+            "description": "The time the attribute was last updated as a UTC Unix timestamp",
+            "example": 1671028894
+          },
+          "type": {
+            "type": "string",
+            "description": "The identifier of the custom object type that defines the structure of the custom object instance.",
+            "example": "Order"
+          },
+          "custom_attributes": {
+            "type": "object",
+            "description": "The custom attributes you have set on the custom object instance.\n\nEach value is returned with the type of the attribute it is set on: a string, integer, number or boolean, or `null` when the attribute is unset. A list attribute returns the label of the selected option. A reference attribute returns an object holding the referenced records, under `contacts` for a contact reference, `conversations` for a conversation reference, or `instances` for a reference to another custom object type.",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "nullable": true
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "object"
+                }
+              ]
+            },
+            "example": {
+              "order_number": "ORDER-12345",
+              "total_amount": 99.99
+            }
+          }
+        }
+      },
+      "content_source": {
+        "title": "Content Source",
+        "type": "object",
+        "x-tags": [
+          "AI Content Source"
+        ],
+        "description": "The content source used by AI Agent in the conversation.",
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "description": "The type of the content source.",
+            "example": "content_snippet",
+            "enum": [
+              "file",
+              "article",
+              "external_content",
+              "content_snippet",
+              "workflow_connector_action",
+              "internal_article"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "The internal URL linking to the content source for teammates.",
+            "example": "/fin-ai-agent/content?content=content_snippet&id=3234924"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the content source.",
+            "example": "My internal content snippet"
+          },
+          "locale": {
+            "type": "string",
+            "description": "The ISO 639 language code of the content source.",
+            "example": "en"
+          }
+        }
+      },
+      "conversation_scorecard_note_author": {
+        "title": "Note Author",
+        "type": "object",
+        "nullable": true,
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "Who wrote the note. Null when the teammate who wrote it has since been deleted.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "admin"
+            ],
+            "description": "The kind of author. `admin` when a teammate wrote the note; `ai` when Fin did.",
+            "example": "admin"
+          },
+          "admin_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id of the admin who wrote the note. Present only when `type` is `admin`.",
+            "example": "884120017"
+          }
+        }
+      },
+      "conversation_scorecard_evaluator_result": {
+        "title": "Conversation Scorecard Evaluator Result",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "The outcome of a single evaluator within a scorecard.",
+        "properties": {
+          "value": {
+            "type": "string",
+            "nullable": true,
+            "description": "The evaluator's selected value (typically a label such as `pass`, `fail`, or a category identifier).",
+            "example": "pass"
+          },
+          "value_label": {
+            "type": "string",
+            "description": "The label of the rating option matching `value` (for example `Needs improvement`). Omitted when the label could not be resolved.",
+            "example": "Pass"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "The origin of the result (for example, `ai` or `human`).",
+            "example": "ai"
+          },
+          "reasoning": {
+            "type": "string",
+            "nullable": true,
+            "description": "A free-text explanation of the result.",
+            "example": "The agent acknowledged the issue and resolved it within the same response."
+          },
+          "reason_ids": {
+            "type": "array",
+            "nullable": true,
+            "description": "Identifiers for structured reasons assigned to the result, if any.",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "101",
+              "102"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "description": "The structured reasons chosen for this result. Omitted when none were chosen.",
+            "items": {
+              "$ref": "#/components/schemas/conversation_scorecard_evaluator_reason"
+            },
+            "example": [
+              {
+                "name": "Clear and concise"
+              },
+              {
+                "name": "Empathetic tone"
+              }
+            ]
+          },
+          "other_text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Free-text entered by the reviewer to supplement or stand in for the structured `reason_ids` — typically captured when the reviewer selects an \"Other\" option or adds a custom note. Null when not provided.",
+            "example": "Agent acknowledged the issue but missed the follow-up question about billing."
+          }
+        }
+      },
+      "conversation_scorecard_evaluator_reason": {
+        "title": "Evaluator Reason",
+        "type": "object",
+        "x-tags": [
+          "Conversations"
+        ],
+        "description": "A single structured reason assigned to an evaluator's result.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name of the reason. Null if the reason's name could not be resolved.",
+            "example": "Clear and concise"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

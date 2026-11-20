@@ -1,0 +1,250 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Google Sheets API",
+    "version": "v4",
+    "description": "Spreadsheet and values reads and writes from the Google Sheets API v4 discovery document (sheets.spreadsheets.get, spreadsheets.values.get, spreadsheets.values.append, spreadsheets.values.batchUpdate, spreadsheets.values.clear). Bearer access token. The version is a prefix of the base URL (/<version>), not a path in this document."
+  },
+  "servers": [{ "url": "https://sheets.googleapis.com/v4" }],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/spreadsheets/{spreadsheetId}": {
+      "get": {
+        "operationId": "getSpreadsheet",
+        "parameters": [
+          {
+            "name": "spreadsheetId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "name": "fields", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "The spreadsheet.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/spreadsheet" } }
+            }
+          }
+        }
+      }
+    },
+    "/spreadsheets/{spreadsheetId}/values/{range}": {
+      "get": {
+        "operationId": "getValues",
+        "parameters": [
+          {
+            "name": "spreadsheetId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "name": "range", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One range of values.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/valueRange" } }
+            }
+          }
+        }
+      }
+    },
+    "/spreadsheets/{spreadsheetId}/values/{range}:append": {
+      "post": {
+        "operationId": "appendValues",
+        "parameters": [
+          {
+            "name": "spreadsheetId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "name": "range", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "valueInputOption", "in": "query", "schema": { "type": "string" } },
+          { "name": "insertDataOption", "in": "query", "schema": { "type": "string" } },
+          { "name": "includeValuesInResponse", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "responseValueRenderOption", "in": "query", "schema": { "type": "string" } },
+          { "name": "responseDateTimeRenderOption", "in": "query", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/valueRange" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The appended table.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/appendValuesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/spreadsheets/{spreadsheetId}/values:batchUpdate": {
+      "post": {
+        "operationId": "batchUpdateValues",
+        "parameters": [
+          {
+            "name": "spreadsheetId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/batchUpdateValuesRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated ranges.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/batchUpdateValuesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/spreadsheets/{spreadsheetId}/values/{range}:clear": {
+      "post": {
+        "operationId": "clearValues",
+        "parameters": [
+          {
+            "name": "spreadsheetId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "name": "range", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/clearValuesRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The cleared range.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/clearValuesResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "schemas": {
+      "spreadsheet": {
+        "type": "object",
+        "properties": {
+          "spreadsheetId": { "type": "string" },
+          "sheets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "title": { "type": "string" },
+                    "sheetId": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "valueRange": {
+        "type": "object",
+        "properties": {
+          "range": { "type": "string" },
+          "majorDimension": { "type": "string" },
+          "values": {
+            "type": "array",
+            "items": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "appendValuesResponse": {
+        "type": "object",
+        "properties": {
+          "spreadsheetId": { "type": "string" },
+          "tableRange": { "type": "string" },
+          "updates": { "$ref": "#/components/schemas/updateValuesResponse" }
+        }
+      },
+      "updateValuesResponse": {
+        "type": "object",
+        "properties": {
+          "spreadsheetId": { "type": "string" },
+          "updatedRange": { "type": "string" },
+          "updatedRows": { "type": "integer" },
+          "updatedColumns": { "type": "integer" },
+          "updatedCells": { "type": "integer" },
+          "updatedData": { "$ref": "#/components/schemas/valueRange" }
+        }
+      },
+      "batchUpdateValuesRequest": {
+        "type": "object",
+        "properties": {
+          "valueInputOption": { "type": "string" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/valueRange" }
+          },
+          "includeValuesInResponse": { "type": "boolean" },
+          "responseValueRenderOption": { "type": "string" },
+          "responseDateTimeRenderOption": { "type": "string" }
+        },
+        "required": ["valueInputOption", "data"]
+      },
+      "batchUpdateValuesResponse": {
+        "type": "object",
+        "properties": {
+          "spreadsheetId": { "type": "string" },
+          "totalUpdatedRows": { "type": "integer" },
+          "totalUpdatedColumns": { "type": "integer" },
+          "totalUpdatedCells": { "type": "integer" },
+          "totalUpdatedSheets": { "type": "integer" },
+          "responses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/updateValuesResponse" }
+          }
+        }
+      },
+      "clearValuesRequest": {
+        "type": "object",
+        "description": "The request for clearing a range of values in a spreadsheet.",
+        "properties": {}
+      },
+      "clearValuesResponse": {
+        "type": "object",
+        "properties": {
+          "spreadsheetId": { "type": "string" },
+          "clearedRange": { "type": "string" }
+        }
+      }
+    }
+  }
+}

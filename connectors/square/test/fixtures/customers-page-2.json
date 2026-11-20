@@ -1,0 +1,10 @@
+{
+  "customers": [
+    {
+      "id": "cust_2",
+      "given_name": "Grace",
+      "email_address": "grace@example.com",
+      "created_at": "2026-02-02T00:00:00Z"
+    }
+  ]
+}

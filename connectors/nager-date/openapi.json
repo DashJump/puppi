@@ -1,0 +1,147 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Nager.Date",
+    "version": "3.0.0",
+    "description": "Public holidays at https://date.nager.at. A country the service does not cover is a 404."
+  },
+  "servers": [{ "url": "https://date.nager.at/api/v3" }],
+  "paths": {
+    "/AvailableCountries": {
+      "get": {
+        "operationId": "availableCountries",
+        "responses": {
+          "200": {
+            "description": "Covered countries.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/country" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PublicHolidays/{year}/{countryCode}": {
+      "get": {
+        "operationId": "publicHolidays",
+        "parameters": [
+          { "name": "year", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public holidays that year.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/NextPublicHolidaysWorldwide": {
+      "get": {
+        "operationId": "nextWorldwide",
+        "responses": {
+          "200": {
+            "description": "Next holidays worldwide.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/NextPublicHolidays/{countryCode}": {
+      "get": {
+        "operationId": "next",
+        "parameters": [
+          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Next holidays for one country.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/LongWeekend/{year}/{countryCode}": {
+      "get": {
+        "operationId": "longWeekends",
+        "parameters": [
+          { "name": "year", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Long weekends.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/longWeekend" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "country": {
+        "type": "object",
+        "required": ["countryCode", "name"],
+        "properties": { "countryCode": { "type": "string" }, "name": { "type": "string" } }
+      },
+      "holiday": {
+        "type": "object",
+        "required": [
+          "date",
+          "localName",
+          "name",
+          "countryCode",
+          "fixed",
+          "global",
+          "counties",
+          "launchYear",
+          "types"
+        ],
+        "properties": {
+          "date": { "type": "string", "description": "ISO date." },
+          "localName": { "type": "string" },
+          "name": { "type": "string" },
+          "countryCode": { "type": "string" },
+          "fixed": { "type": "boolean", "description": "Same date every year." },
+          "global": {
+            "type": "boolean",
+            "description": "Nationwide, as opposed to some counties only."
+          },
+          "counties": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "launchYear": { "type": "integer", "nullable": true },
+          "types": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "longWeekend": {
+        "type": "object",
+        "required": ["startDate", "endDate", "dayCount", "needBridgeDay"],
+        "properties": {
+          "startDate": { "type": "string" },
+          "endDate": { "type": "string" },
+          "dayCount": { "type": "integer" },
+          "needBridgeDay": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

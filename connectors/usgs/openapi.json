@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "USGS Earthquake Catalog",
+    "version": "1.0.0",
+    "description": "FDSN event API at https://earthquake.usgs.gov/fdsnws/event/1. GeoJSON in, flat rows out via reshape."
+  },
+  "servers": [{ "url": "https://earthquake.usgs.gov/fdsnws/event/1" }],
+  "paths": {
+    "/query": {
+      "get": {
+        "operationId": "queryEarthquakes",
+        "parameters": [
+          { "name": "format", "in": "query", "schema": { "type": "string" } },
+          { "name": "starttime", "in": "query", "schema": { "type": "string" } },
+          { "name": "endtime", "in": "query", "schema": { "type": "string" } },
+          { "name": "minmagnitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxmagnitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "latitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "longitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxradiuskm", "in": "query", "schema": { "type": "number" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "orderby", "in": "query", "schema": { "type": "string" } },
+          { "name": "eventtype", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "A GeoJSON FeatureCollection.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/featureCollection" } }
+            }
+          }
+        }
+      }
+    },
+    "/count": {
+      "get": {
+        "operationId": "countEarthquakes",
+        "parameters": [
+          { "name": "format", "in": "query", "schema": { "type": "string" } },
+          { "name": "starttime", "in": "query", "schema": { "type": "string" } },
+          { "name": "minmagnitude", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "How many events match.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["count"],
+                  "properties": { "count": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "feature": {
+        "type": "object",
+        "required": ["type", "id", "properties", "geometry"],
+        "properties": {
+          "type": { "type": "string", "enum": ["Feature"] },
+          "id": { "type": "string" },
+          "properties": { "$ref": "#/components/schemas/featureProperties" },
+          "geometry": { "$ref": "#/components/schemas/point" }
+        }
+      },
+      "featureProperties": {
+        "type": "object",
+        "required": [
+          "mag",
+          "place",
+          "time",
+          "updated",
+          "tz",
+          "url",
+          "felt",
+          "cdi",
+          "mmi",
+          "alert",
+          "tsunami",
+          "sig",
+          "net",
+          "magType",
+          "type",
+          "title"
+        ],
+        "properties": {
+          "mag": { "type": "number", "nullable": true },
+          "place": { "type": "string", "nullable": true },
+          "time": { "type": "integer", "description": "Milliseconds since the epoch." },
+          "updated": { "type": "integer" },
+          "tz": { "type": "integer", "nullable": true },
+          "url": { "type": "string" },
+          "felt": { "type": "integer", "nullable": true },
+          "cdi": { "type": "number", "nullable": true },
+          "mmi": { "type": "number", "nullable": true },
+          "alert": { "type": "string", "nullable": true },
+          "tsunami": { "type": "integer" },
+          "sig": { "type": "integer" },
+          "net": { "type": "string" },
+          "magType": { "type": "string", "nullable": true },
+          "type": { "type": "string" },
+          "title": { "type": "string" }
+        }
+      },
+      "point": {
+        "type": "object",
+        "required": ["type", "coordinates"],
+        "properties": {
+          "type": { "type": "string", "enum": ["Point"] },
+          "coordinates": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": { "type": "number" }
+          }
+        }
+      },
+      "featureCollection": {
+        "type": "object",
+        "required": ["type", "metadata", "features"],
+        "properties": {
+          "type": { "type": "string", "enum": ["FeatureCollection"] },
+          "metadata": {
+            "type": "object",
+            "required": ["generated", "count", "title", "status"],
+            "properties": {
+              "generated": { "type": "integer" },
+              "count": { "type": "integer" },
+              "title": { "type": "string" },
+              "status": { "type": "integer" }
+            }
+          },
+          "features": { "type": "array", "items": { "$ref": "#/components/schemas/feature" } }
+        }
+      }
+    }
+  }
+}

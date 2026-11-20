@@ -1,0 +1,133 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Zendesk Support API",
+    "version": "v2",
+    "description": "Tickets list and the current user, written from https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#list-tickets. Cursor pagination follows links.next. The version is a prefix of the base URL (/api/<version>), not a path in this document."
+  },
+  "servers": [
+    {
+      "url": "https://{subdomain}.zendesk.com/api/v2",
+      "variables": {
+        "subdomain": {
+          "default": "acme",
+          "description": "Account subdomain. acme becomes https://acme.zendesk.com. A binding base_url replaces the host."
+        }
+      }
+    }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/tickets": {
+      "get": {
+        "operationId": "listTickets",
+        "summary": "List tickets",
+        "description": "One page of tickets. The following page is the absolute URL in links.next. page[size] and page[after] are cursor parameters, not page numbers.",
+        "parameters": [
+          {
+            "name": "page[size]",
+            "in": "query",
+            "required": false,
+            "description": "Number of tickets on this page.",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "page[after]",
+            "in": "query",
+            "required": false,
+            "description": "Cursor of the page after this one. The client follows links.next instead of sending this itself.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of tickets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["tickets", "meta"],
+                  "properties": {
+                    "tickets": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ticket" }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": ["has_more"],
+                      "properties": {
+                        "has_more": { "type": "boolean" },
+                        "after_cursor": { "type": "string" }
+                      }
+                    },
+                    "links": {
+                      "type": "object",
+                      "properties": {
+                        "next": {
+                          "type": "string",
+                          "description": "Absolute URL of the next page. Absent on the last page."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Show the current user",
+        "description": "Proves the access token.",
+        "responses": {
+          "200": {
+            "description": "The user that owns the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["user"],
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/user" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Authorization: Bearer <access_token>"
+      }
+    },
+    "schemas": {
+      "ticket": {
+        "type": "object",
+        "required": ["id", "subject", "status", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "subject": { "type": "string" },
+          "status": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "user": {
+        "type": "object",
+        "required": ["id", "email"],
+        "properties": {
+          "id": { "type": "integer" },
+          "email": { "type": "string" }
+        }
+      }
+    }
+  }
+}

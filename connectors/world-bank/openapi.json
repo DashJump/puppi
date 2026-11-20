@@ -1,0 +1,177 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "World Bank Indicators",
+    "version": "2.0.0",
+    "description": "https://api.worldbank.org/v2. Each page is a [meta, rows] pair. A 200 whose first element is a message is an error."
+  },
+  "servers": [{ "url": "https://api.worldbank.org/v2" }],
+  "paths": {
+    "/country": {
+      "get": {
+        "operationId": "listCountries",
+        "parameters": [
+          { "name": "format", "in": "query", "schema": { "type": "string" } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of countries.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/countryPage" } }
+            }
+          }
+        }
+      }
+    },
+    "/country/{countries}/indicator/{code}": {
+      "get": {
+        "operationId": "indicator",
+        "parameters": [
+          { "name": "countries", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "code", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "format", "in": "query", "schema": { "type": "string" } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "mrv", "in": "query", "schema": { "type": "integer" } },
+          { "name": "date", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of observations.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/observationPage" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "named": {
+        "type": "object",
+        "description": "A classification the api attaches to a country: region, income level, lending type.",
+        "required": ["id", "iso2code", "value"],
+        "properties": {
+          "id": { "type": "string" },
+          "iso2code": { "type": "string" },
+          "value": { "type": "string" }
+        }
+      },
+      "country": {
+        "type": "object",
+        "required": [
+          "id",
+          "iso2Code",
+          "name",
+          "region",
+          "adminregion",
+          "incomeLevel",
+          "lendingType",
+          "capitalCity",
+          "longitude",
+          "latitude"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-3, or an aggregate code such as EUU."
+          },
+          "iso2Code": { "type": "string" },
+          "name": { "type": "string" },
+          "region": { "$ref": "#/components/schemas/named" },
+          "adminregion": { "$ref": "#/components/schemas/named" },
+          "incomeLevel": { "$ref": "#/components/schemas/named" },
+          "lendingType": { "$ref": "#/components/schemas/named" },
+          "capitalCity": { "type": "string" },
+          "longitude": {
+            "type": "string",
+            "description": "Decimal degrees as a string; empty for aggregates."
+          },
+          "latitude": {
+            "type": "string",
+            "description": "Decimal degrees as a string; empty for aggregates."
+          }
+        }
+      },
+      "observation": {
+        "type": "object",
+        "description": "One value of one indicator for one country in one year.",
+        "required": [
+          "indicator",
+          "country",
+          "countryiso3code",
+          "date",
+          "value",
+          "unit",
+          "obs_status",
+          "decimal"
+        ],
+        "properties": {
+          "indicator": {
+            "type": "object",
+            "required": ["id", "value"],
+            "properties": { "id": { "type": "string" }, "value": { "type": "string" } }
+          },
+          "country": {
+            "type": "object",
+            "description": "id is the ISO 3166-1 alpha-2 code, or an aggregate code.",
+            "required": ["id", "value"],
+            "properties": { "id": { "type": "string" }, "value": { "type": "string" } }
+          },
+          "countryiso3code": { "type": "string" },
+          "date": { "type": "string", "description": "The year, as a string." },
+          "value": { "type": "number", "nullable": true },
+          "unit": { "type": "string" },
+          "obs_status": { "type": "string" },
+          "decimal": { "type": "integer" }
+        }
+      },
+      "countryPage": {
+        "type": "array",
+        "prefixItems": [
+          { "$ref": "#/components/schemas/pageMeta" },
+          { "type": "array", "items": { "$ref": "#/components/schemas/country" } }
+        ]
+      },
+      "observationPage": {
+        "type": "array",
+        "prefixItems": [
+          { "$ref": "#/components/schemas/pageMeta" },
+          { "type": "array", "items": { "$ref": "#/components/schemas/observation" } }
+        ]
+      },
+      "pageMeta": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "pages": { "type": "integer" },
+          "total": { "type": "integer" }
+        }
+      },
+      "message": {
+        "type": "object",
+        "description": "One entry in a 200 whose first element is a message. That body is a refusal, not a page.",
+        "required": ["id", "key", "value"],
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "value": { "type": "string" }
+        }
+      },
+      "messageEnvelope": {
+        "type": "object",
+        "description": "The first element of a refusal page: [{ message: [...] }].",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/message" }
+          }
+        }
+      }
+    }
+  }
+}

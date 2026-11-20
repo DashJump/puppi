@@ -1,0 +1,110 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Frankfurter",
+    "version": "v1",
+    "description": "ECB reference rates at https://frankfurter.dev. Written from the published API. No key."
+  },
+  "servers": [{ "url": "https://api.frankfurter.dev/v1" }],
+  "paths": {
+    "/latest": {
+      "get": {
+        "operationId": "getLatest",
+        "parameters": [
+          { "name": "base", "in": "query", "schema": { "type": "string" } },
+          { "name": "symbols", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest rates.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/latest" } }
+            }
+          }
+        }
+      }
+    },
+    "/{date}": {
+      "get": {
+        "operationId": "getOn",
+        "parameters": [
+          { "name": "date", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rates on one date.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/latest" } }
+            }
+          }
+        }
+      }
+    },
+    "/{range}": {
+      "get": {
+        "operationId": "getSeries",
+        "parameters": [
+          { "name": "range", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rates across a start..end range.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/series" } }
+            }
+          }
+        }
+      }
+    },
+    "/currencies": {
+      "get": {
+        "operationId": "getCurrencies",
+        "responses": {
+          "200": {
+            "description": "Currency code to name.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "latest": {
+        "type": "object",
+        "required": ["amount", "base", "date", "rates"],
+        "properties": {
+          "amount": { "type": "number" },
+          "base": { "type": "string" },
+          "date": {
+            "type": "string",
+            "description": "The rates' date, which is the last business day the ECB published."
+          },
+          "rates": { "type": "object", "additionalProperties": { "type": "number" } }
+        }
+      },
+      "series": {
+        "type": "object",
+        "required": ["amount", "base", "start_date", "end_date", "rates"],
+        "properties": {
+          "amount": { "type": "number" },
+          "base": { "type": "string" },
+          "start_date": { "type": "string" },
+          "end_date": { "type": "string" },
+          "rates": {
+            "type": "object",
+            "description": "date -> currency -> rate.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

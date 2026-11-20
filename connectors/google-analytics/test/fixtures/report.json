@@ -1,0 +1,16 @@
+{
+  "dimensionHeaders": [{ "name": "country" }, { "name": "city" }],
+  "metricHeaders": [{ "name": "activeUsers", "type": "TYPE_INTEGER" }],
+  "rows": [
+    {
+      "dimensionValues": [{ "value": "Japan" }, { "value": "Tokyo" }],
+      "metricValues": [{ "value": "2541" }]
+    },
+    {
+      "dimensionValues": [{ "value": "France" }],
+      "metricValues": [{ "value": "12" }]
+    }
+  ],
+  "rowCount": 2,
+  "kind": "analyticsData#runReport"
+}

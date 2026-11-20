@@ -1,0 +1,2482 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Reference",
+    "version": "v0",
+    "description": "Sentry Public API",
+    "termsOfService": "http://sentry.io/terms/",
+    "contact": {
+      "email": "partners@sentry.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{region}.sentry.io",
+      "variables": {
+        "region": {
+          "default": "us",
+          "description": "The data-storage-location for an organization",
+          "enum": [
+            "us",
+            "de"
+          ]
+        }
+      }
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "auth_token": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "paths": {
+    "/api/0/organizations/": {
+      "get": {
+        "operationId": "listOrganizations",
+        "description": "Return a list of organizations available to the authenticated session in a region.\nThis is particularly useful for requests with a user bound context. For API key-based requests this will only return the organization that belongs to the key.",
+        "summary": "List Your Organizations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "owner",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Specify `true` to restrict results to organizations in which you are an owner."
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "A pointer to the last object fetched and its sort order; used to retrieve the next or previous results.",
+            "x-learn-more": "https://docs.sentry.io/api/pagination/"
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filters results by using [query syntax](/product/sentry-basics/search/).\n\nValid query fields include:\n- `id`: The organization ID\n- `slug`: The organization slug\n- `status`: The organization's current status (one of `active`, `pending_deletion`, or `deletion_in_progress`)\n- `email` or `member_id`: Filter your organizations by the emails or [organization member IDs](/api/organizations/list-an-organizations-members/) of specific members included\n- `query`: Filter your organizations by name, slug, and members that contain this substring\n\nExample: `query=(slug:foo AND status:active) OR (email:[thing-one@example.com,thing-two@example.com] AND query:bar)`\n"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The field to sort results by, in descending order. If not specified the results are sorted by the date they were created.\n\nValid fields include:\n- `members`: By number of members\n- `events`: By number of events in the past 24 hours\n"
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Limit the number of rows to return in the result. Default and maximum allowed is 100."
+          }
+        ],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "auth_token": [
+              "org:admin",
+              "org:read",
+              "org:write"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Features enabled for the organization"
+                      },
+                      "extraOptions": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "Server-wide options that the Sentry UI reads"
+                      },
+                      "access": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Scopes the requesting user has in the organization"
+                      },
+                      "onboardingTasks": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "task": {
+                              "type": "string",
+                              "nullable": true,
+                              "description": "Onboarding task key, such as create_project"
+                            },
+                            "status": {
+                              "type": "string",
+                              "description": "Task status: complete or skipped"
+                            },
+                            "completionSeen": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true,
+                              "description": "When the task's completion was marked as seen, or null"
+                            },
+                            "dateCompleted": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the task was completed or skipped"
+                            },
+                            "data": {
+                              "description": "Extra data recorded for the task, which depends on the task"
+                            }
+                          },
+                          "required": [
+                            "completionSeen",
+                            "data",
+                            "dateCompleted",
+                            "status",
+                            "task"
+                          ]
+                        },
+                        "description": "Onboarding tasks the organization has completed or skipped"
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "Organization ID"
+                      },
+                      "slug": {
+                        "type": "string",
+                        "description": "Organization slug"
+                      },
+                      "status": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Status ID: active, pending_deletion, deletion_in_progress or relocation_pending_approval"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Status label, such as active or pending deletion"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "description": "Organization status"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Organization name, or its slug when it has no name"
+                      },
+                      "dateCreated": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the organization was created (ISO 8601)"
+                      },
+                      "isEarlyAdopter": {
+                        "type": "boolean",
+                        "description": "Whether the organization is an early adopter"
+                      },
+                      "require2FA": {
+                        "type": "boolean",
+                        "description": "Whether members must use two-factor authentication"
+                      },
+                      "avatar": {
+                        "type": "object",
+                        "properties": {
+                          "avatarType": {
+                            "type": "string",
+                            "description": "Avatar type, such as letter_avatar, upload or gravatar"
+                          },
+                          "avatarUuid": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "ID of the uploaded avatar image, or null"
+                          },
+                          "avatarUrl": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "URL of the avatar image, or null if none is set"
+                          }
+                        },
+                        "description": "Organization avatar"
+                      },
+                      "links": {
+                        "type": "object",
+                        "properties": {
+                          "organizationUrl": {
+                            "type": "string",
+                            "description": "Base URL of the organization"
+                          },
+                          "regionUrl": {
+                            "type": "string",
+                            "description": "Base URL of the API for the organization's region"
+                          }
+                        },
+                        "required": [
+                          "organizationUrl",
+                          "regionUrl"
+                        ],
+                        "description": "Organization and region URLs"
+                      },
+                      "hasAuthProvider": {
+                        "type": "boolean",
+                        "description": "Whether SSO is configured for the organization"
+                      },
+                      "allowMemberInvite": {
+                        "type": "boolean",
+                        "description": "Whether members can invite other members"
+                      },
+                      "allowMemberProjectCreation": {
+                        "type": "boolean",
+                        "description": "Whether members can create projects"
+                      },
+                      "allowSuperuserAccess": {
+                        "type": "boolean",
+                        "description": "Whether Sentry superusers can access the organization"
+                      }
+                    },
+                    "required": [
+                      "allowMemberInvite",
+                      "allowMemberProjectCreation",
+                      "allowSuperuserAccess",
+                      "avatar",
+                      "dateCreated",
+                      "hasAuthProvider",
+                      "id",
+                      "isEarlyAdopter",
+                      "links",
+                      "name",
+                      "require2FA",
+                      "slug",
+                      "status"
+                    ]
+                  }
+                },
+                "examples": {
+                  "ListYourOrganizations": {
+                    "value": [
+                      {
+                        "avatar": {
+                          "avatarType": "letter_avatar",
+                          "avatarUuid": null
+                        },
+                        "dateCreated": "2018-11-06T21:19:55.101Z",
+                        "features": [
+                          "session-replay-video",
+                          "onboarding",
+                          "advanced-search",
+                          "monitor-seat-billing",
+                          "issue-platform"
+                        ],
+                        "hasAuthProvider": false,
+                        "id": "2",
+                        "isEarlyAdopter": false,
+                        "allowMemberInvite": true,
+                        "allowMemberProjectCreation": true,
+                        "allowSuperuserAccess": false,
+                        "links": {
+                          "organizationUrl": "https://the-interstellar-jurisdiction.sentry.io",
+                          "regionUrl": "https://us.sentry.io"
+                        },
+                        "name": "The Interstellar Jurisdiction",
+                        "require2FA": false,
+                        "slug": "the-interstellar-jurisdiction",
+                        "status": {
+                          "id": "active",
+                          "name": "active"
+                        }
+                      }
+                    ],
+                    "summary": "List your organizations"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "x-sentry-routing": {
+          "silo": "both"
+        }
+      }
+    },
+    "/api/0/organizations/{organization_id_or_slug}/projects/": {
+      "get": {
+        "operationId": "listOrganizationProjects",
+        "description": "Return a list of projects bound to a organization.",
+        "summary": "List an Organization's Projects",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id_or_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID or slug of the organization the resource belongs to.",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "A pointer to the last object fetched and its sort order; used to retrieve the next or previous results.",
+            "x-learn-more": "https://docs.sentry.io/api/pagination/"
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Limit the number of rows to return in the result. Default and maximum allowed is 100."
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter projects by name or slug."
+          }
+        ],
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "auth_token": [
+              "org:admin",
+              "org:read",
+              "org:write"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "latestDeploys": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "nullable": true,
+                        "description": "Latest deploy for each environment, keyed by environment name, with its release version and finish time. Omitted when collapsed"
+                      },
+                      "options": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Requested project options, keyed by option name. Only included when options are requested"
+                      },
+                      "stats": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              },
+                              "minLength": 2,
+                              "maxLength": 2
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            }
+                          }
+                        ],
+                        "description": "Counts of non-transaction events per interval over the requested stats period, as [timestamp, count] pairs. Only included when a stats period is requested"
+                      },
+                      "transactionStats": {
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "minLength": 2,
+                          "maxLength": 2
+                        },
+                        "description": "Counts of transactions per interval over the requested stats period, as [timestamp, count] pairs. Only included when transaction stats are requested"
+                      },
+                      "sessionStats": {
+                        "type": "object",
+                        "properties": {
+                          "currentCrashFreeRate": {
+                            "type": "number",
+                            "format": "double",
+                            "nullable": true
+                          },
+                          "previousCrashFreeRate": {
+                            "type": "number",
+                            "format": "double",
+                            "nullable": true
+                          },
+                          "hasHealthData": {
+                            "type": "boolean",
+                            "description": "Whether the project has release health (session) data"
+                          }
+                        },
+                        "required": [
+                          "currentCrashFreeRate",
+                          "hasHealthData",
+                          "previousCrashFreeRate"
+                        ],
+                        "description": "Crash-free session rates for the current and previous stats period. Only included when session stats are requested"
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "ID of the project"
+                      },
+                      "slug": {
+                        "type": "string",
+                        "description": "Slug of the project"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Name of the project"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Platform of the project"
+                      },
+                      "dateCreated": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the project was created (ISO 8601)"
+                      },
+                      "isBookmarked": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user bookmarked the project"
+                      },
+                      "isMember": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user is a member of a team with access to the project"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Features enabled for the project"
+                      },
+                      "firstEvent": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When the project received its first event (ISO 8601)"
+                      },
+                      "firstTransactionEvent": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent transactions"
+                      },
+                      "access": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Scopes the requesting user has on the project through team membership and organization role"
+                      },
+                      "hasAccess": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user has access to the project"
+                      },
+                      "hasFeedbacks": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent user feedback"
+                      },
+                      "hasFlags": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent feature flags"
+                      },
+                      "hasMinifiedStackTrace": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent an event with a minified stack trace"
+                      },
+                      "hasMonitors": {
+                        "type": "boolean",
+                        "description": "Whether the project has cron monitors"
+                      },
+                      "hasNewFeedbacks": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent user feedback from the user feedback widget"
+                      },
+                      "hasProfiles": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent profiles"
+                      },
+                      "hasReplays": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent replays"
+                      },
+                      "hasSessions": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent sessions"
+                      },
+                      "hasInsightsHttp": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent HTTP request spans used by Insights"
+                      },
+                      "hasInsightsDb": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent database spans used by Insights"
+                      },
+                      "hasInsightsAssets": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent asset spans used by Insights"
+                      },
+                      "hasInsightsAppStart": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent app start spans used by Insights"
+                      },
+                      "hasInsightsScreenLoad": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent screen load spans used by Insights"
+                      },
+                      "hasInsightsVitals": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent web vitals spans used by Insights"
+                      },
+                      "hasInsightsCaches": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent cache spans used by Insights"
+                      },
+                      "hasInsightsQueues": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent queue spans used by Insights"
+                      },
+                      "hasInsightsAgentMonitoring": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent AI agent spans used by Insights"
+                      },
+                      "hasInsightsMCP": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent MCP spans used by Insights"
+                      },
+                      "hasLogs": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent logs. Always true outside sentry.io"
+                      },
+                      "hasTraceMetrics": {
+                        "type": "boolean",
+                        "description": "Whether the project has sent trace metrics. Always true outside sentry.io"
+                      },
+                      "team": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID of the team"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the team"
+                          },
+                          "slug": {
+                            "type": "string",
+                            "description": "Slug of the team"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "slug"
+                        ],
+                        "nullable": true,
+                        "description": "First team with access to the project; use teams instead"
+                      },
+                      "teams": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "ID of the team"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name of the team"
+                            },
+                            "slug": {
+                              "type": "string",
+                              "description": "Slug of the team"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "slug"
+                          ]
+                        },
+                        "description": "Teams with access to the project"
+                      },
+                      "platforms": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Platforms seen in the project's events"
+                      },
+                      "hasUserReports": {
+                        "type": "boolean",
+                        "description": "Whether the project has received user reports"
+                      },
+                      "environments": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Environments seen in the project's events"
+                      },
+                      "latestRelease": {
+                        "type": "object",
+                        "properties": {
+                          "version": {
+                            "type": "string",
+                            "description": "Version of the release"
+                          }
+                        },
+                        "required": [
+                          "version"
+                        ],
+                        "nullable": true,
+                        "description": "Latest release of the project"
+                      }
+                    },
+                    "required": [
+                      "access",
+                      "dateCreated",
+                      "environments",
+                      "features",
+                      "firstEvent",
+                      "firstTransactionEvent",
+                      "hasAccess",
+                      "hasFeedbacks",
+                      "hasFlags",
+                      "hasInsightsAgentMonitoring",
+                      "hasInsightsAppStart",
+                      "hasInsightsAssets",
+                      "hasInsightsCaches",
+                      "hasInsightsDb",
+                      "hasInsightsHttp",
+                      "hasInsightsMCP",
+                      "hasInsightsQueues",
+                      "hasInsightsScreenLoad",
+                      "hasInsightsVitals",
+                      "hasLogs",
+                      "hasMinifiedStackTrace",
+                      "hasMonitors",
+                      "hasNewFeedbacks",
+                      "hasProfiles",
+                      "hasReplays",
+                      "hasSessions",
+                      "hasTraceMetrics",
+                      "hasUserReports",
+                      "id",
+                      "isBookmarked",
+                      "isMember",
+                      "latestRelease",
+                      "name",
+                      "platform",
+                      "platforms",
+                      "slug",
+                      "team",
+                      "teams"
+                    ]
+                  }
+                },
+                "examples": {
+                  "ListAnOrganization'sProjects": {
+                    "value": [
+                      {
+                        "slug": "prime-mover",
+                        "name": "Prime Mover",
+                        "dateCreated": "2018-11-06T21:19:58.536Z",
+                        "firstEvent": null,
+                        "access": [],
+                        "hasAccess": true,
+                        "id": "3",
+                        "isBookmarked": false,
+                        "isMember": true,
+                        "platform": "",
+                        "platforms": [],
+                        "team": {
+                          "id": "2",
+                          "name": "Powerful Abolitionist",
+                          "slug": "powerful-abolitionist"
+                        },
+                        "teams": [
+                          {
+                            "id": "2",
+                            "name": "Powerful Abolitionist",
+                            "slug": "powerful-abolitionist"
+                          }
+                        ],
+                        "environments": [
+                          "local"
+                        ],
+                        "features": [
+                          "releases"
+                        ],
+                        "firstTransactionEvent": true,
+                        "hasSessions": true,
+                        "hasProfiles": true,
+                        "hasReplays": true,
+                        "hasFlags": true,
+                        "hasMinifiedStackTrace": false,
+                        "hasMonitors": true,
+                        "hasFeedbacks": false,
+                        "hasNewFeedbacks": false,
+                        "hasUserReports": false,
+                        "hasInsightsHttp": true,
+                        "hasInsightsDb": false,
+                        "hasInsightsAssets": true,
+                        "hasInsightsAppStart": false,
+                        "hasInsightsScreenLoad": false,
+                        "hasInsightsVitals": false,
+                        "hasInsightsCaches": false,
+                        "hasInsightsQueues": false,
+                        "hasInsightsAgentMonitoring": false,
+                        "hasInsightsMCP": false,
+                        "hasLogs": false,
+                        "hasTraceMetrics": false,
+                        "latestRelease": null
+                      }
+                    ],
+                    "summary": "List an organization's projects"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "x-sentry-routing": {
+          "silo": "cell",
+          "organizationParameter": "organization_id_or_slug"
+        }
+      }
+    },
+    "/api/0/organizations/{organization_id_or_slug}/issues/": {
+      "get": {
+        "operationId": "listOrganizationIssues",
+        "description": "Return a list of issues for an organization. All parameters are supplied as query string parameters. A default query of `is:unresolved` is applied. To return all results, use an empty query value (i.e. ``?query=`). ",
+        "summary": "List an Organization's Issues",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id_or_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID or slug of the organization the resource belongs to.",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "The name of environments to filter by."
+          },
+          {
+            "in": "query",
+            "name": "project",
+            "schema": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "description": "The IDs or slugs of projects to filter by. Project slugs are unique within each organization. Omit this parameter to include all accessible projects. `-1` is also accepted to include all accessible projects.\nFor example, the following are valid parameters:\n- `/?project=1234&project=56789`\n- `/?project=android&project=javascript-react`\n- `/?project=-1`\n"
+          },
+          {
+            "in": "query",
+            "name": "statsPeriod",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The period of time for the query, will override the start & end parameters, a number followed by one of:\n- `d` for days\n- `h` for hours\n- `m` for minutes\n- `s` for seconds\n- `w` for weeks\n\nFor example, `24h`, to mean query data starting from 24 hours ago to now."
+          },
+          {
+            "in": "query",
+            "name": "statsPeriodStart",
+            "schema": {
+              "type": "string"
+            },
+            "description": "How long ago the query period starts, in the same format as `statsPeriod`. Must be sent with `statsPeriodEnd`, and is ignored when `statsPeriod` is sent."
+          },
+          {
+            "in": "query",
+            "name": "statsPeriodEnd",
+            "schema": {
+              "type": "string"
+            },
+            "description": "How long ago the query period ends, in the same format as `statsPeriod`. Must be sent with `statsPeriodStart`, and is ignored when `statsPeriod` is sent."
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "The start of the period of time for the query, expected in ISO-8601 format. For example, `2001-12-14T12:34:56.7890`."
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "The end of the period of time for the query, expected in ISO-8601 format. For example, `2001-12-14T12:34:56.7890`."
+          },
+          {
+            "in": "query",
+            "name": "groupStatsPeriod",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "14d",
+                "24h",
+                "auto"
+              ]
+            },
+            "description": "The timeline on which stats for the groups should be presented."
+          },
+          {
+            "in": "query",
+            "name": "shortIdLookup",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "description": "If this is set to `1` then the query will be parsed for issue short IDs. These may ignore other filters (e.g. projects), which is why it is an opt-in."
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string",
+              "default": "is:unresolved"
+            },
+            "description": "An optional search query for filtering issues. A default query will apply if no query is set. For all results use this parameter with an empty string."
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "date",
+                "freq",
+                "inbox",
+                "new",
+                "recommended",
+                "trends",
+                "user"
+              ],
+              "default": "date"
+            },
+            "description": "The sort order of the view. Options include 'Last Seen' (`date`), 'First Seen' (`new`), 'Trends' (`trends`), 'Events' (`freq`), 'Users' (`user`), 'Date Added' (`inbox`), and 'Recommended' (`recommended`)."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            },
+            "description": "The maximum number of issues to return. The maximum is 100."
+          },
+          {
+            "in": "query",
+            "name": "expand",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "inbox",
+                  "integrationIssues",
+                  "latestEventHasAttachments",
+                  "owners",
+                  "sentryAppIssues",
+                  "sessions"
+                ]
+              }
+            },
+            "description": "Additional data to include in the response."
+          },
+          {
+            "in": "query",
+            "name": "collapse",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "base",
+                  "filtered",
+                  "lifetime",
+                  "stats",
+                  "unhandled"
+                ]
+              }
+            },
+            "description": "Fields to remove from the response to improve query performance."
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "A pointer to the last object fetched and its sort order; used to retrieve the next or previous results.",
+            "x-learn-more": "https://docs.sentry.io/api/pagination/"
+          }
+        ],
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "auth_token": [
+              "event:admin",
+              "event:read",
+              "event:write"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID of the issue"
+                      },
+                      "shareId": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "ID used in the issue's public share URL. Null when the issue isn't shared"
+                      },
+                      "shortId": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Short ID of the issue, such as PROJECT-1A"
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "Title of the issue"
+                      },
+                      "culprit": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Function or module where the issue occurs"
+                      },
+                      "permalink": {
+                        "type": "string",
+                        "description": "URL of the issue in Sentry"
+                      },
+                      "logger": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Logger of the issue's events"
+                      },
+                      "level": {
+                        "enum": [
+                          "sample",
+                          "debug",
+                          "info",
+                          "warning",
+                          "error",
+                          "fatal",
+                          "unknown"
+                        ],
+                        "type": "string",
+                        "description": "Severity level of the issue"
+                      },
+                      "status": {
+                        "enum": [
+                          "resolved",
+                          "ignored",
+                          "pending_deletion",
+                          "pending_merge",
+                          "reprocessing",
+                          "unresolved"
+                        ],
+                        "type": "string",
+                        "description": "Issue status"
+                      },
+                      "statusDetails": {
+                        "type": "object",
+                        "properties": {
+                          "ignoreCount": {
+                            "type": "integer",
+                            "nullable": true,
+                            "description": "Number of additional events after which the issue stops being ignored"
+                          },
+                          "ignoreUntil": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true,
+                            "description": "When the issue stops being ignored (ISO 8601)"
+                          },
+                          "ignoreUserCount": {
+                            "type": "integer",
+                            "nullable": true,
+                            "description": "Number of additional affected users after which the issue stops being ignored"
+                          },
+                          "ignoreUserWindow": {
+                            "type": "integer",
+                            "nullable": true,
+                            "description": "Time window in minutes for ignoreUserCount"
+                          },
+                          "ignoreWindow": {
+                            "type": "integer",
+                            "nullable": true,
+                            "description": "Time window in minutes for ignoreCount"
+                          },
+                          "actor": {
+                            "type": "object",
+                            "properties": {
+                              "identities": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "description": "SSO identity ID"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "User's identifier at the auth provider"
+                                    },
+                                    "organization": {
+                                      "type": "object",
+                                      "properties": {
+                                        "slug": {
+                                          "type": "string",
+                                          "description": "Organization slug"
+                                        },
+                                        "name": {
+                                          "type": "string",
+                                          "description": "Organization name"
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "slug"
+                                      ],
+                                      "description": "Organization the auth provider belongs to"
+                                    },
+                                    "provider": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "description": "Auth provider key, such as google or saml2"
+                                        },
+                                        "name": {
+                                          "type": "string",
+                                          "description": "Display name of the auth provider"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ],
+                                      "description": "Auth provider of the identity"
+                                    },
+                                    "dateVerified": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "description": "When the identity was last verified by signing in through the auth provider"
+                                    },
+                                    "dateSynced": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "description": "When the identity was last synced from the auth provider"
+                                    }
+                                  },
+                                  "required": [
+                                    "dateSynced",
+                                    "dateVerified",
+                                    "id",
+                                    "name",
+                                    "organization",
+                                    "provider"
+                                  ]
+                                },
+                                "description": "SSO identities of the user. Only included for the requesting user, unless the request has active superuser or staff access"
+                              },
+                              "avatar": {
+                                "type": "object",
+                                "properties": {
+                                  "avatarType": {
+                                    "type": "string",
+                                    "description": "Avatar type, such as letter_avatar, upload or gravatar"
+                                  },
+                                  "avatarUuid": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "description": "ID of the uploaded avatar image, or null"
+                                  },
+                                  "avatarUrl": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "description": "URL of the avatar image, or null if none is set"
+                                  }
+                                },
+                                "description": "User avatar"
+                              },
+                              "authenticators": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "description": "Authenticator ID"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "description": "Authenticator type, such as totp, sms, u2f or recovery"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "Display name of the authenticator type"
+                                    },
+                                    "dateCreated": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "description": "When the authenticator was added"
+                                    },
+                                    "dateUsed": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "nullable": true,
+                                      "description": "When the authenticator was last used, or null"
+                                    }
+                                  },
+                                  "required": [
+                                    "dateCreated",
+                                    "dateUsed",
+                                    "id",
+                                    "name",
+                                    "type"
+                                  ]
+                                },
+                                "description": "Two-factor authenticators of the user, without backup methods such as recovery codes"
+                              },
+                              "canReset2fa": {
+                                "type": "boolean",
+                                "description": "Whether the organization can reset the user's two-factor authentication. True only if the user is a member of exactly one active organization"
+                              },
+                              "id": {
+                                "type": "string",
+                                "description": "User ID"
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Display name: the user's name, or their email or username if no name is set"
+                              },
+                              "username": {
+                                "type": "string",
+                                "description": "Username"
+                              },
+                              "email": {
+                                "type": "string",
+                                "description": "Primary email address"
+                              },
+                              "avatarUrl": {
+                                "type": "string",
+                                "description": "Gravatar URL for the primary email address"
+                              },
+                              "isActive": {
+                                "type": "boolean",
+                                "description": "Whether the account is active"
+                              },
+                              "isSuspended": {
+                                "type": "boolean",
+                                "description": "Whether the account is suspended. Suspended users can't sign in"
+                              },
+                              "hasPasswordAuth": {
+                                "type": "boolean",
+                                "description": "Whether the user has a password set"
+                              },
+                              "isManaged": {
+                                "type": "boolean",
+                                "description": "Whether the account is managed, which stops the user from changing their username, password and similar details"
+                              },
+                              "dateJoined": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "When the account was created"
+                              },
+                              "lastLogin": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true,
+                                "description": "When the user last signed in, or null"
+                              },
+                              "has2fa": {
+                                "type": "boolean",
+                                "description": "Whether the user has two-factor authentication enabled"
+                              },
+                              "lastActive": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true,
+                                "description": "When the user was last active, or null"
+                              },
+                              "isSuperuser": {
+                                "type": "boolean",
+                                "description": "Whether the user is a superuser"
+                              },
+                              "isStaff": {
+                                "type": "boolean",
+                                "description": "Whether the user has staff status"
+                              },
+                              "experiments": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "string"
+                                },
+                                "description": "Deprecated. Always an empty object"
+                              },
+                              "emails": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "description": "Email ID"
+                                    },
+                                    "email": {
+                                      "type": "string",
+                                      "description": "Email address"
+                                    },
+                                    "is_verified": {
+                                      "type": "boolean",
+                                      "description": "Whether the email address is verified"
+                                    }
+                                  },
+                                  "required": [
+                                    "email",
+                                    "id",
+                                    "is_verified"
+                                  ]
+                                },
+                                "description": "Email addresses of the user. Only included for the requesting user or superusers; empty otherwise"
+                              }
+                            },
+                            "required": [
+                              "avatarUrl",
+                              "dateJoined",
+                              "email",
+                              "emails",
+                              "experiments",
+                              "has2fa",
+                              "hasPasswordAuth",
+                              "id",
+                              "isActive",
+                              "isManaged",
+                              "isStaff",
+                              "isSuperuser",
+                              "isSuspended",
+                              "lastActive",
+                              "lastLogin",
+                              "name",
+                              "username"
+                            ],
+                            "nullable": true,
+                            "description": "User who ignored or resolved the issue"
+                          },
+                          "inNextRelease": {
+                            "type": "boolean",
+                            "description": "Whether the issue is resolved in the next release"
+                          },
+                          "inRelease": {
+                            "type": "string",
+                            "description": "Version of the release the issue is resolved in"
+                          },
+                          "inCommit": {
+                            "type": "string",
+                            "description": "Commit the issue is resolved in"
+                          },
+                          "pendingEvents": {
+                            "type": "integer",
+                            "description": "Number of events still waiting to be reprocessed"
+                          },
+                          "info": {
+                            "type": "object",
+                            "properties": {
+                              "dateCreated": {
+                                "type": "string"
+                              },
+                              "syncCount": {
+                                "type": "integer"
+                              },
+                              "totalEvents": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "dateCreated",
+                              "syncCount",
+                              "totalEvents"
+                            ],
+                            "nullable": true,
+                            "description": "Reprocessing progress details"
+                          }
+                        },
+                        "description": "Details of the issue's status, such as when an ignore expires or which release resolves it"
+                      },
+                      "substatus": {
+                        "enum": [
+                          "archived_until_escalating",
+                          "archived_until_condition_met",
+                          "archived_forever",
+                          "escalating",
+                          "ongoing",
+                          "regressed",
+                          "new",
+                          null
+                        ],
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Substatus of the issue, such as ongoing, regressed or escalating"
+                      },
+                      "isPublic": {
+                        "type": "boolean",
+                        "description": "Whether the issue is shared publicly"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Platform of the issue's events"
+                      },
+                      "priority": {
+                        "enum": [
+                          "low",
+                          "medium",
+                          "high",
+                          null
+                        ],
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Priority of the issue: high, medium or low"
+                      },
+                      "priorityLockedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When the priority was last set manually, which stops automatic priority updates (ISO 8601)"
+                      },
+                      "seerFixabilityScore": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true,
+                        "description": "Seer's score for how likely the issue is to be fixable"
+                      },
+                      "seerAutofixLastTriggered": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When Seer Autofix was last triggered for the issue (ISO 8601)"
+                      },
+                      "seerExplorerAutofixLastTriggered": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When the Seer explorer agent last completed an Autofix step for the issue (ISO 8601)"
+                      },
+                      "project": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID of the project"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the project"
+                          },
+                          "slug": {
+                            "type": "string",
+                            "description": "Slug of the project"
+                          },
+                          "platform": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Platform of the project"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "platform",
+                          "slug"
+                        ],
+                        "description": "Project the issue belongs to"
+                      },
+                      "type": {
+                        "enum": [
+                          "default",
+                          "error",
+                          "csp",
+                          "nel",
+                          "hpkp",
+                          "expectct",
+                          "expectstaple",
+                          "transaction",
+                          "generic",
+                          "feedback"
+                        ],
+                        "type": "string",
+                        "description": "Event type of the issue, such as error or default"
+                      },
+                      "issueType": {
+                        "type": "string",
+                        "description": "Issue type, such as error or performance_n_plus_one_db_queries"
+                      },
+                      "issueCategory": {
+                        "type": "string",
+                        "description": "Issue category, such as error or performance"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Issue metadata"
+                      },
+                      "numComments": {
+                        "type": "integer",
+                        "description": "Number of comments on the issue"
+                      },
+                      "assignedTo": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "user",
+                              "team"
+                            ],
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "type"
+                        ],
+                        "nullable": true,
+                        "description": "User or team the issue is assigned to"
+                      },
+                      "isBookmarked": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user bookmarked the issue"
+                      },
+                      "isSubscribed": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user is subscribed to the issue"
+                      },
+                      "subscriptionDetails": {
+                        "type": "object",
+                        "properties": {
+                          "disabled": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "nullable": true,
+                        "description": "Why the requesting user is subscribed to the issue"
+                      },
+                      "hasSeen": {
+                        "type": "boolean",
+                        "description": "Whether the requesting user has seen the issue since it last occurred"
+                      },
+                      "annotations": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "displayName": {
+                              "type": "string",
+                              "description": "Display name of the linked external issue"
+                            },
+                            "url": {
+                              "type": "string",
+                              "description": "URL of the linked external issue"
+                            }
+                          },
+                          "required": [
+                            "displayName",
+                            "url"
+                          ]
+                        },
+                        "description": "External issues linked to the issue"
+                      },
+                      "isUnhandled": {
+                        "type": "boolean",
+                        "description": "Whether the issue includes unhandled events"
+                      },
+                      "count": {
+                        "type": "string",
+                        "description": "Total number of events in the issue"
+                      },
+                      "userCount": {
+                        "type": "integer",
+                        "description": "Number of users affected by the issue"
+                      },
+                      "firstSeen": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When the issue was first seen (ISO 8601)"
+                      },
+                      "lastSeen": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "When the issue was last seen (ISO 8601)"
+                      },
+                      "derivedData": {
+                        "type": "object",
+                        "properties": {
+                          "blocker": {
+                            "type": "string"
+                          },
+                          "progress": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "viewCount": {
+                            "type": "integer"
+                          },
+                          "hasOpenFixPr": {
+                            "type": "boolean"
+                          },
+                          "isAssigned": {
+                            "type": "boolean"
+                          },
+                          "hasRootCause": {
+                            "type": "boolean"
+                          },
+                          "lastCompletedAutofixStep": {
+                            "type": "string"
+                          },
+                          "lastProgressedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "impact": {
+                            "type": "object",
+                            "properties": {
+                              "score": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true,
+                                "description": "Estimated per-occurrence impact on the end user's capability from 0 to 100"
+                              },
+                              "level": {
+                                "enum": [
+                                  "super_low",
+                                  "low",
+                                  "moderate",
+                                  "high",
+                                  "super_high",
+                                  null
+                                ],
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Impact level derived from the assessment score"
+                              },
+                              "description": {
+                                "type": "string",
+                                "description": "Human-readable description of the capability affected by the issue"
+                              },
+                              "citations": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "reference": {
+                                      "type": "string",
+                                      "description": "Stable identifier for the evidence supporting this claim"
+                                    },
+                                    "claim": {
+                                      "type": "string",
+                                      "description": "Concise explanation of what the cited evidence establishes"
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "description": "The category of evidence cited, such as an event, trace, replay, or log"
+                                    }
+                                  },
+                                  "required": [
+                                    "claim",
+                                    "reference",
+                                    "source"
+                                  ]
+                                },
+                                "description": "Evidence-backed claims supporting the impact assessment"
+                              },
+                              "sourceEventId": {
+                                "type": "string",
+                                "description": "ID of the issue event used to generate the impact assessment"
+                              }
+                            },
+                            "required": [
+                              "citations",
+                              "description",
+                              "level",
+                              "score",
+                              "sourceEventId"
+                            ],
+                            "nullable": true,
+                            "description": "The issue's impact assessment, or null when no assessment is available"
+                          }
+                        },
+                        "required": [
+                          "blocker",
+                          "hasOpenFixPr",
+                          "hasRootCause",
+                          "isAssigned",
+                          "lastCompletedAutofixStep",
+                          "lastProgressedAt",
+                          "progress",
+                          "status",
+                          "viewCount"
+                        ],
+                        "description": "Additional data derived for the issue. Only included when requested with expand"
+                      },
+                      "stats": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Event counts over the requested stats period, keyed by the period, as [timestamp, count] pairs. Omitted when stats is collapsed"
+                      },
+                      "lifetime": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Event count, user count, and first and last seen times over the issue's lifetime. Omitted when stats or lifetime is collapsed"
+                      },
+                      "filtered": {
+                        "type": "object",
+                        "properties": {
+                          "count": {
+                            "type": "string",
+                            "description": "Number of the issue's events that match the search query"
+                          },
+                          "userCount": {
+                            "type": "integer",
+                            "description": "Number of users affected by the issue's events that match the search query"
+                          },
+                          "firstSeen": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true,
+                            "description": "When an event matching the search query was first seen (ISO 8601)"
+                          },
+                          "lastSeen": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true,
+                            "description": "When an event matching the search query was last seen (ISO 8601)"
+                          },
+                          "stats": {
+                            "type": "object",
+                            "additionalProperties": {},
+                            "description": "Counts of matching events over the requested stats period, keyed by the period, as [timestamp, count] pairs"
+                          }
+                        },
+                        "required": [
+                          "count",
+                          "firstSeen",
+                          "lastSeen",
+                          "userCount"
+                        ],
+                        "nullable": true,
+                        "description": "Event count, user count, and first and last seen times for events that match the search query. Null when there's no query; omitted when stats or filtered is collapsed"
+                      },
+                      "sessionCount": {
+                        "type": "integer",
+                        "description": "Number of sessions in the issue's project over the query time range. Only included when requested with expand=sessions"
+                      },
+                      "inbox": {
+                        "type": "object",
+                        "properties": {
+                          "reason": {
+                            "type": "integer"
+                          },
+                          "reason_details": {
+                            "type": "object",
+                            "properties": {
+                              "until": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "count": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "window": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "user_count": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "user_window": {
+                                "type": "integer",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "until",
+                              "user_count",
+                              "user_window",
+                              "window"
+                            ],
+                            "nullable": true
+                          },
+                          "date_added": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "date_added",
+                          "reason",
+                          "reason_details"
+                        ],
+                        "description": "Why the issue is in the inbox. Only included when requested with expand"
+                      },
+                      "owners": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "owner": {
+                              "type": "string"
+                            },
+                            "date_added": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "date_added",
+                            "owner",
+                            "type"
+                          ]
+                        },
+                        "nullable": true,
+                        "description": "Suggested owners of the issue. Only included when requested with expand"
+                      },
+                      "integrationIssues": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "External issues linked through integrations. Only included when requested with expand"
+                      },
+                      "sentryAppIssues": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "External issues linked through Sentry apps. Only included when requested with expand"
+                      },
+                      "latestEventHasAttachments": {
+                        "type": "boolean",
+                        "description": "Whether the issue's latest event has attachments. Only included when requested with expand"
+                      },
+                      "matchingEventId": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "ID of the event the search query matched. Only included when the query matches an event ID"
+                      },
+                      "matchingEventEnvironment": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Environment of the event the search query matched. Only included when the query matches an event ID"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  }
+                },
+                "examples": {
+                  "ReturnAListOfIssuesForAnOrganization": {
+                    "value": [
+                      {
+                        "annotations": [],
+                        "assignedTo": {
+                          "type": "user",
+                          "id": "1",
+                          "name": "John Doe",
+                          "email": "john.doe@example.com"
+                        },
+                        "count": "150",
+                        "culprit": "raven.scripts.runner in main",
+                        "firstSeen": "2018-11-06T21:19:55Z",
+                        "filtered": null,
+                        "inbox": {
+                          "reason": 0,
+                          "reason_details": null,
+                          "date_added": "2018-11-06T21:19:55Z"
+                        },
+                        "hasSeen": false,
+                        "id": "1",
+                        "isBookmarked": false,
+                        "isPublic": false,
+                        "isSubscribed": true,
+                        "lastSeen": "2018-12-06T21:19:55Z",
+                        "level": "error",
+                        "logger": null,
+                        "metadata": {
+                          "title": "This is an example Python exception"
+                        },
+                        "numComments": 0,
+                        "permalink": "https://sentry.io/the-interstellar-jurisdiction/pump-station/issues/1/",
+                        "project": {
+                          "id": "2",
+                          "name": "Pump Station",
+                          "slug": "pump-station",
+                          "platform": "python"
+                        },
+                        "shareId": "123def456abc",
+                        "shortId": "PUMP-STATION-1",
+                        "stats": {
+                          "24h": [
+                            [
+                              1541455200,
+                              473
+                            ],
+                            [
+                              1541458800,
+                              914
+                            ],
+                            [
+                              1541462400,
+                              991
+                            ],
+                            [
+                              1541466000,
+                              925
+                            ],
+                            [
+                              1541469600,
+                              881
+                            ],
+                            [
+                              1541473200,
+                              182
+                            ],
+                            [
+                              1541476800,
+                              490
+                            ],
+                            [
+                              1541480400,
+                              820
+                            ],
+                            [
+                              1541484000,
+                              322
+                            ],
+                            [
+                              1541487600,
+                              836
+                            ],
+                            [
+                              1541491200,
+                              565
+                            ],
+                            [
+                              1541494800,
+                              758
+                            ],
+                            [
+                              1541498400,
+                              880
+                            ],
+                            [
+                              1541502000,
+                              677
+                            ],
+                            [
+                              1541505600,
+                              381
+                            ],
+                            [
+                              1541509200,
+                              814
+                            ],
+                            [
+                              1541512800,
+                              329
+                            ],
+                            [
+                              1541516400,
+                              446
+                            ],
+                            [
+                              1541520000,
+                              731
+                            ],
+                            [
+                              1541523600,
+                              111
+                            ],
+                            [
+                              1541527200,
+                              926
+                            ],
+                            [
+                              1541530800,
+                              772
+                            ],
+                            [
+                              1541534400,
+                              400
+                            ],
+                            [
+                              1541538000,
+                              943
+                            ]
+                          ]
+                        },
+                        "priority": "medium",
+                        "priorityLockedAt": null,
+                        "owners": [
+                          {
+                            "type": "ownershipRule",
+                            "owner": "user:1",
+                            "date_added": "2018-11-06T21:19:55Z"
+                          },
+                          {
+                            "type": "suspectCommit",
+                            "owner": "team:2",
+                            "date_added": "2018-11-06T21:19:55Z"
+                          }
+                        ],
+                        "platform": "python",
+                        "lifetime": {
+                          "count": "150",
+                          "userCount": 0,
+                          "firstSeen": "2018-11-06T21:19:55Z",
+                          "lastSeen": "2018-12-06T21:19:55Z"
+                        },
+                        "seerAutofixLastTriggered": null,
+                        "seerExplorerAutofixLastTriggered": null,
+                        "seerFixabilityScore": null,
+                        "status": "ignored",
+                        "substatus": "archived_until_condition_met",
+                        "statusDetails": {},
+                        "subscriptionDetails": null,
+                        "title": "This is an example Python exception",
+                        "type": "default",
+                        "userCount": 0,
+                        "integrationIssues": [],
+                        "sentryAppIssues": [],
+                        "isUnhandled": false,
+                        "issueCategory": "performance",
+                        "issueType": "performance_n_plus_one_db_queries",
+                        "sessionCount": 0,
+                        "latestEventHasAttachments": false,
+                        "matchingEventId": null,
+                        "matchingEventEnvironment": null,
+                        "derivedData": {
+                          "blocker": "none",
+                          "progress": "fix_applied",
+                          "status": "open",
+                          "viewCount": 42,
+                          "hasOpenFixPr": false,
+                          "isAssigned": true,
+                          "hasRootCause": true,
+                          "lastCompletedAutofixStep": "pr_created",
+                          "lastProgressedAt": "2018-12-06T21:19:55Z"
+                        }
+                      }
+                    ],
+                    "summary": "Return a list of issues for an organization"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "x-sentry-routing": {
+          "silo": "cell",
+          "organizationParameter": "organization_id_or_slug"
+        }
+      }
+    },
+    "/api/0/projects/{organization_id_or_slug}/{project_id_or_slug}/events/": {
+      "get": {
+        "operationId": "listProjectEvents",
+        "description": "Return a list of events bound to a project.",
+        "summary": "List a Project's Error Events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id_or_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID or slug of the organization the resource belongs to.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID or slug of the project the resource belongs to. Project slugs are unique within each organization.",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "statsPeriod",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The period of time for the query, will override the start & end parameters, a number followed by one of:\n- `d` for days\n- `h` for hours\n- `m` for minutes\n- `s` for seconds\n- `w` for weeks\n\nFor example, `24h`, to mean query data starting from 24 hours ago to now."
+          },
+          {
+            "in": "query",
+            "name": "statsPeriodStart",
+            "schema": {
+              "type": "string"
+            },
+            "description": "How long ago the query period starts, in the same format as `statsPeriod`. Must be sent with `statsPeriodEnd`, and is ignored when `statsPeriod` is sent."
+          },
+          {
+            "in": "query",
+            "name": "statsPeriodEnd",
+            "schema": {
+              "type": "string"
+            },
+            "description": "How long ago the query period ends, in the same format as `statsPeriod`. Must be sent with `statsPeriodStart`, and is ignored when `statsPeriod` is sent."
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "The start of the period of time for the query, expected in ISO-8601 format. For example, `2001-12-14T12:34:56.7890`."
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "The end of the period of time for the query, expected in ISO-8601 format. For example, `2001-12-14T12:34:56.7890`."
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "A pointer to the last object fetched and its sort order; used to retrieve the next or previous results.",
+            "x-learn-more": "https://docs.sentry.io/api/pagination/"
+          },
+          {
+            "in": "query",
+            "name": "full",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Specify true to include the full event body, including the stacktrace, in the event payload. When true, the page size is capped at 10."
+          },
+          {
+            "in": "query",
+            "name": "sample",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Return events in pseudo-random order. This is deterministic so an identical query will always return the same events in the same order."
+          }
+        ],
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "auth_token": [
+              "project:admin",
+              "project:read",
+              "project:write"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID of the event"
+                      },
+                      "event.type": {
+                        "type": "string",
+                        "description": "Event type, such as error, default or transaction"
+                      },
+                      "groupID": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "ID of the issue the event belongs to"
+                      },
+                      "eventID": {
+                        "type": "string",
+                        "description": "ID of the event"
+                      },
+                      "projectID": {
+                        "type": "string",
+                        "description": "ID of the project the event belongs to"
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "Event message"
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "Event title"
+                      },
+                      "location": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Source location of the event, such as a file and line"
+                      },
+                      "culprit": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Function or module that caused the event"
+                      },
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "email": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "username": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ip_address": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "geo": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            },
+                            "nullable": true
+                          },
+                          "data": {
+                            "type": "object",
+                            "additionalProperties": {},
+                            "nullable": true
+                          }
+                        },
+                        "nullable": true,
+                        "description": "User context of the event"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "query": {
+                              "type": "string",
+                              "description": "Search query that matches this tag's user, such as user.email:\"user@example.com\". Only set for user tags"
+                            },
+                            "key": {
+                              "type": "string",
+                              "description": "Tag key"
+                            },
+                            "value": {
+                              "type": "string",
+                              "description": "Tag value"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "value"
+                          ]
+                        },
+                        "description": "Tags attached to the event"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Platform of the event, such as python or javascript"
+                      },
+                      "dateCreated": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event occurred (ISO 8601)"
+                      },
+                      "crashFile": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Crash report attachment of the event, if any"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "Event metadata"
+                      }
+                    },
+                    "required": [
+                      "crashFile",
+                      "culprit",
+                      "dateCreated",
+                      "event.type",
+                      "eventID",
+                      "groupID",
+                      "id",
+                      "location",
+                      "message",
+                      "metadata",
+                      "platform",
+                      "projectID",
+                      "tags",
+                      "title",
+                      "user"
+                    ]
+                  }
+                },
+                "examples": {
+                  "ReturnAListOfErrorEventsBoundToAProject": {
+                    "value": [
+                      {
+                        "eventID": "9fac2ceed9344f2bbfdd1fdacb0ed9b1",
+                        "tags": [
+                          {
+                            "key": "browser",
+                            "value": "Chrome 60.0"
+                          },
+                          {
+                            "key": "device",
+                            "value": "Other"
+                          },
+                          {
+                            "key": "environment",
+                            "value": "production"
+                          },
+                          {
+                            "value": "fatal",
+                            "key": "level"
+                          },
+                          {
+                            "key": "os",
+                            "value": "Mac OS X 10.12.6"
+                          },
+                          {
+                            "value": "CPython 2.7.16",
+                            "key": "runtime"
+                          },
+                          {
+                            "key": "release",
+                            "value": "17642328ead24b51867165985996d04b29310337"
+                          },
+                          {
+                            "key": "server_name",
+                            "value": "web1.example.com"
+                          }
+                        ],
+                        "dateCreated": "2020-09-11T17:46:36Z",
+                        "user": null,
+                        "message": "",
+                        "title": "This is an example Python exception",
+                        "id": "dfb1a2d057194e76a4186cc8a5271553",
+                        "platform": "python",
+                        "event.type": "error",
+                        "groupID": "1889724436",
+                        "crashFile": null,
+                        "location": "example.py:123",
+                        "culprit": "/books/new/",
+                        "projectID": "49271",
+                        "metadata": {
+                          "type": "ExampleException",
+                          "value": "This is an example Python exception"
+                        }
+                      }
+                    ],
+                    "summary": "Return a list of error events bound to a project"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "x-sentry-routing": {
+          "silo": "cell",
+          "organizationParameter": "organization_id_or_slug"
+        }
+      }
+    }
+  }
+}

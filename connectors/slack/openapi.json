@@ -1,0 +1,97 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Slack Web API conversations",
+    "version": "unversioned",
+    "description": "Trimmed from the conversations.list and conversations.info docs. Slack publishes no versioned REST document for these methods."
+  },
+  "servers": [{ "url": "https://slack.com/api" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "schemas": {
+      "channel": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "is_channel": { "type": "boolean" },
+          "is_archived": { "type": "boolean" },
+          "created": { "type": "integer" },
+          "updated": { "type": "integer" }
+        }
+      },
+      "response_metadata": {
+        "type": "object",
+        "properties": {
+          "next_cursor": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/conversations.list": {
+      "get": {
+        "operationId": "conversationsList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "types", "in": "query", "schema": { "type": "string" } },
+          { "name": "exclude_archived", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of channels, or ok: false with an error code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["ok"],
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "error": { "type": "string" },
+                    "channels": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/channel" }
+                    },
+                    "response_metadata": { "$ref": "#/components/schemas/response_metadata" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations.info": {
+      "get": {
+        "operationId": "conversationsInfo",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "channel", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One channel, or ok: false with an error code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["ok"],
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "error": { "type": "string" },
+                    "channel": { "$ref": "#/components/schemas/channel" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

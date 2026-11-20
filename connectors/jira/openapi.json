@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Jira Cloud platform REST API",
+    "version": "3",
+    "description": "Issue search and the current user, written from https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-jql-get. GET /rest/api/3/search/jql returns issues, isLast, and nextPageToken. This document has no POST operations."
+  },
+  "servers": [
+    {
+      "url": "https://{domain}.atlassian.net",
+      "variables": {
+        "domain": {
+          "default": "acme",
+          "description": "Site subdomain. A value that already contains a dot is a full host. A value that starts with https:// is a base URL."
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/rest/api/3/myself": {
+      "get": {
+        "operationId": "getMyself",
+        "summary": "Get current user",
+        "description": "Proves the API token. https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-myself/#api-rest-api-3-myself-get",
+        "responses": {
+          "200": {
+            "description": "The user that owns the token.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/api/3/search/jql": {
+      "get": {
+        "operationId": "searchIssues",
+        "summary": "Search for issues using JQL enhanced search",
+        "description": "GET enhanced search. The following page is nextPageToken, which is null or absent on the last page. There is no total. Fields default to id.",
+        "parameters": [
+          {
+            "name": "jql",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "nextPageToken",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "maxResults",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of issues.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResults" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "required": ["accountId", "emailAddress"],
+        "properties": {
+          "accountId": { "type": "string" },
+          "emailAddress": { "type": "string" }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "required": ["id", "key", "fields"],
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "fields": { "$ref": "#/components/schemas/IssueFields" }
+        }
+      },
+      "IssueFields": {
+        "type": "object",
+        "required": ["summary", "updated"],
+        "properties": {
+          "summary": { "type": "string" },
+          "updated": { "type": "string" }
+        }
+      },
+      "SearchResults": {
+        "type": "object",
+        "required": ["issues"],
+        "properties": {
+          "isLast": { "type": "boolean" },
+          "nextPageToken": { "type": "string", "nullable": true },
+          "issues": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Issue" }
+          }
+        }
+      }
+    }
+  }
+}
