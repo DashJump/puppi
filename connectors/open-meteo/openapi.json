@@ -1,0 +1,139 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Open-Meteo",
+    "version": "1.0.0",
+    "description": "Forecast, archive, and geocoding. Three hosts. The forecast host is the client base URL; archive and geocoding are passed per call."
+  },
+  "servers": [
+    { "url": "https://api.open-meteo.com" },
+    { "url": "https://archive-api.open-meteo.com" },
+    { "url": "https://geocoding-api.open-meteo.com" }
+  ],
+  "paths": {
+    "/v1/forecast": {
+      "get": {
+        "operationId": "getForecast",
+        "parameters": [
+          { "name": "latitude", "in": "query", "schema": { "type": "string" } },
+          { "name": "longitude", "in": "query", "schema": { "type": "string" } },
+          { "name": "current", "in": "query", "schema": { "type": "string" } },
+          { "name": "daily", "in": "query", "schema": { "type": "string" } },
+          { "name": "forecast_days", "in": "query", "schema": { "type": "integer" } },
+          { "name": "timezone", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "One object, or an array when several locations were asked.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/forecast" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/archive": {
+      "get": {
+        "operationId": "getArchive",
+        "parameters": [
+          { "name": "latitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "longitude", "in": "query", "schema": { "type": "number" } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "daily", "in": "query", "schema": { "type": "string" } },
+          { "name": "timezone", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historical daily values.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/forecast" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/search": {
+      "get": {
+        "operationId": "searchPlaces",
+        "parameters": [
+          { "name": "name", "in": "query", "schema": { "type": "string" } },
+          { "name": "count", "in": "query", "schema": { "type": "integer" } },
+          { "name": "language", "in": "query", "schema": { "type": "string" } },
+          { "name": "format", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching places.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/search" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "forecast": {
+        "type": "object",
+        "required": ["latitude", "longitude", "timezone", "elevation"],
+        "properties": {
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" },
+          "timezone": { "type": "string" },
+          "elevation": { "type": "number" },
+          "current": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [{ "type": "number" }, { "type": "string" }],
+              "nullable": true
+            }
+          },
+          "current_units": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "daily": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "anyOf": [{ "type": "number" }, { "type": "string" }],
+                "nullable": true
+              }
+            }
+          },
+          "daily_units": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "place": {
+        "type": "object",
+        "required": ["id", "name", "latitude", "longitude"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" },
+          "elevation": { "type": "number" },
+          "country_code": { "type": "string" },
+          "country": { "type": "string" },
+          "admin1": { "type": "string" },
+          "population": { "type": "integer" },
+          "timezone": { "type": "string" }
+        }
+      },
+      "search": {
+        "type": "object",
+        "properties": {
+          "results": { "type": "array", "items": { "$ref": "#/components/schemas/place" } }
+        }
+      }
+    }
+  }
+}

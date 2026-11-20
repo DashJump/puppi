@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Facebook Marketing API campaigns",
+    "version": "v21.0",
+    "description": "Trimmed from the Marketing API ad account and ad account campaigns reference. The version is a prefix of the base URL (/<version>), not a path in this document. The ad account id is a path parameter, filled by the client from config. A campaign edge returns only id unless fields is set, so the list always asks for id, name, status, and updated_time."
+  },
+  "servers": [{ "url": "https://graph.facebook.com/v21.0" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Authorization: Bearer <access_token>. The token is never a query parameter."
+      }
+    },
+    "schemas": {
+      "Campaign": {
+        "type": "object",
+        "required": ["id", "name", "status", "updated_time"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string" },
+          "updated_time": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/{account}/campaigns": {
+      "get": {
+        "operationId": "listCampaigns",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Ad account id, act_ prefixed once."
+          },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "after", "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "fields",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Campaign fields to return. Omitted, the edge returns only id."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of campaigns.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Campaign" }
+                    },
+                    "paging": {
+                      "type": "object",
+                      "properties": {
+                        "cursors": {
+                          "type": "object",
+                          "properties": {
+                            "after": { "type": "string" }
+                          }
+                        },
+                        "next": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{account}": {
+      "get": {
+        "operationId": "getAccount",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Ad account id, act_ prefixed once."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ad account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["id", "name"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

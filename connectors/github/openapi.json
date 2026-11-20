@@ -1,0 +1,142 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "GitHub REST API",
+    "version": "2022-11-28",
+    "description": "Authenticated user and repository issues, written from https://docs.github.com/en/rest/users/users#get-the-authenticated-user and https://docs.github.com/en/rest/issues/issues#list-repository-issues. The issue list is a bare JSON array. The following page is the Link header rel=next, not a field in the body. The issue schema keeps the fields this client reads. Other fields remain allowed. X-GitHub-Api-Version, the header this package sends, is this document's version."
+  },
+  "servers": [
+    {
+      "url": "https://api.github.com"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/user": {
+      "get": {
+        "operationId": "getUser",
+        "summary": "Get the authenticated user",
+        "description": "Proves the token. https://docs.github.com/en/rest/users/users#get-the-authenticated-user",
+        "responses": {
+          "200": {
+            "description": "The account that owns the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/user"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/{owner}/{repo}/issues": {
+      "get": {
+        "operationId": "listIssues",
+        "summary": "List repository issues",
+        "description": "https://docs.github.com/en/rest/issues/issues#list-repository-issues. The list includes pull requests.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "description": "Repository owner.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "description": "Repository name.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "open, closed, or all. GitHub's default is open. The client sends this only when the caller passed it.",
+            "schema": { "type": "string", "enum": ["open", "closed", "all"] }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "description": "Only issues updated at or after this ISO 8601 timestamp.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "Results per page. Default 30. Maximum 100.",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number. The client follows Link rel=next instead of sending this.",
+            "schema": { "type": "integer", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of issues. The body is the array. The next page, when there is one, is the Link header rel=next.",
+            "headers": {
+              "link": {
+                "description": "RFC 5988 links. rel=next is the absolute URL of the following page. Absent on the last page.",
+                "required": false,
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/issue" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Authorization: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "user": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["login", "id"],
+        "properties": {
+          "login": { "type": "string" },
+          "id": { "type": "integer" }
+        }
+      },
+      "issue": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "number", "title", "state", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "number": { "type": "integer" },
+          "title": { "type": "string" },
+          "state": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}

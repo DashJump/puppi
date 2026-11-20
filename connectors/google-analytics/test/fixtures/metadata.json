@@ -1,0 +1,23 @@
+{
+  "name": "properties/1234/metadata",
+  "dimensions": [
+    {
+      "apiName": "country",
+      "uiName": "Country",
+      "description": "The country from which the user activity originated.",
+      "customDefinition": false,
+      "category": "Demographics"
+    }
+  ],
+  "metrics": [
+    {
+      "apiName": "activeUsers",
+      "uiName": "Active users",
+      "description": "The number of distinct users who visited your site or app.",
+      "type": "TYPE_INTEGER",
+      "customDefinition": false,
+      "category": "User"
+    }
+  ],
+  "comparisons": []
+}

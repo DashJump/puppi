@@ -1,0 +1,158 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Shopify Admin REST API",
+    "version": "2026-10",
+    "description": "Customers and shop, written from the Shopify Admin REST docs at https://shopify.dev/docs/api/admin-rest/2026-10/resources/customer and https://shopify.dev/docs/api/usage/pagination-rest. GET /customers.json and Link-header paging (rel=next, page_info, limit default 50, maximum 250) are the same in 2026-07. Shopify does not publish an OpenAPI document for this API. List pagination is the Link header, not a field in the body. The customer schema keeps the fields this client reads. Other fields remain allowed."
+  },
+  "servers": [
+    {
+      "url": "https://{shop}.myshopify.com/admin/api/2026-10",
+      "variables": {
+        "shop": {
+          "default": "ada",
+          "description": "Shop subdomain. A value that already contains a dot is a full host."
+        }
+      }
+    }
+  ],
+  "security": [{ "accessToken": [] }],
+  "paths": {
+    "/shop.json": {
+      "get": {
+        "operationId": "getShop",
+        "summary": "Retrieve the shop",
+        "description": "Proves the access token. https://shopify.dev/docs/api/admin-rest/2026-10/resources/shop",
+        "responses": {
+          "200": {
+            "description": "The shop that owns the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["shop"],
+                  "properties": {
+                    "shop": { "$ref": "#/components/schemas/shop" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers.json": {
+      "get": {
+        "operationId": "listCustomers",
+        "summary": "List customers",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum customers on this page. Default 50. Maximum 250.",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 250, "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of customers. The next page, when there is one, is the Link header rel=next.",
+            "headers": {
+              "link": {
+                "description": "RFC 5988 links. rel=next is the absolute URL of the following page, including page_info. Absent on the last page.",
+                "required": false,
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/customer_list" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}.json": {
+      "get": {
+        "operationId": "getCustomer",
+        "summary": "Retrieve a customer",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The customer, wrapped in a customer property.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["customer"],
+                  "properties": {
+                    "customer": { "$ref": "#/components/schemas/customer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "accessToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Shopify-Access-Token"
+      }
+    },
+    "schemas": {
+      "shop": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "domain": { "type": "string" },
+          "myshopify_domain": { "type": "string" }
+        }
+      },
+      "customer": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "email": { "type": "string", "nullable": true },
+          "first_name": { "type": "string", "nullable": true },
+          "last_name": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "orders_count": { "type": "integer" },
+          "state": {
+            "type": "string",
+            "enum": ["disabled", "invited", "enabled", "declined"]
+          }
+        }
+      },
+      "customer_list": {
+        "type": "object",
+        "required": ["customers"],
+        "properties": {
+          "customers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/customer" }
+          }
+        }
+      }
+    }
+  }
+}

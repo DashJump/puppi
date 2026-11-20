@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "organizations": [
+    {
+      "id": "o1",
+      "name": "Apollo.io"
+    },
+    {
+      "id": "o2",
+      "name": "Example"
+    }
+  ]
+}
