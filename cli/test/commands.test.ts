@@ -5,7 +5,7 @@
  * these are not usable in CI without a JSON parser.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import type { Asset, Attempt, Materialization, Run } from "../src/api.js";
 import { main } from "../src/index.js";

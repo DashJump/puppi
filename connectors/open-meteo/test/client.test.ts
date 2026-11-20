@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { assertConformant, runSourceConformance } from "@puppi/conformance";
 import { sample } from "openapi-sampler";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import * as connector from "../src/index.js";
 import { Client, describeWeatherCode } from "../src/index.js";

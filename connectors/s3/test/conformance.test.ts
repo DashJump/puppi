@@ -1,5 +1,5 @@
 import { assertConformant, runStorageConformance } from "@puppi/conformance";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Client } from "../src/index.js";
 

@@ -1,6 +1,6 @@
 import { contentHash, deriveSchema } from "@puppi/adapter-storage";
 import type { Row, WriteResult } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { assertConformant, type ConformanceCheck, runStorageConformance } from "../src/index.js";
 

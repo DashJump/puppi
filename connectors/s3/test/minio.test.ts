@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { isTransient } from "@puppi/sdk";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { Client } from "../src/index.js";
 import { sha256, sign } from "../src/sigv4.js";

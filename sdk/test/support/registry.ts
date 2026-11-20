@@ -3,7 +3,7 @@
  * Collect mode keeps declarations for the life of the module that registered them.
  */
 
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 import * as Sdk from "../../src/index.js";
 

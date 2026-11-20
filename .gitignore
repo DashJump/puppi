@@ -5,3 +5,4 @@ dist/
 puppi-env.d.ts
 puppi-signing-key
 cli/test/.puppi-fixture-*/
+.vitest/

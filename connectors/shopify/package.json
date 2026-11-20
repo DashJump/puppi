@@ -13,10 +13,10 @@
     }
   },
   "scripts": {
-    "generate": "openapi-typescript openapi.json -o src/openapi.ts --export-type --root-types --empty-objects-unknown --default-non-nullable=false && puppi-write-operations openapi.json src/operations.ts && pnpm exec oxfmt --write src/openapi.ts src/operations.ts",
+    "generate": "openapi-typescript openapi.json -o src/openapi.ts --export-type --root-types --empty-objects-unknown --default-non-nullable=false && puppi-write-operations openapi.json src/operations.ts && vp fmt --write src/openapi.ts src/operations.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
-    "test": "vitest run"
+    "test": "vp test run --config ../../vite.config.ts"
   },
   "dependencies": {
     "@puppi/sdk": "workspace:*"
@@ -27,6 +27,6 @@
     "openapi-sampler": "1.7.4",
     "openapi-typescript": "7.13.0",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vite-plus": "catalog:"
   }
 }

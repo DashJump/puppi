@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Duplex } from "node:stream";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { stubDeploy } from "./support/engine.js";
 

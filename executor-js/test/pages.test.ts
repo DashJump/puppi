@@ -1,5 +1,5 @@
 import type { StorageAdapter } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { ExecutorEvent, ExecutorInput } from "../src/protocol.js";
 import { Shim } from "../src/shim/ctx.js";

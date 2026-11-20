@@ -1,6 +1,6 @@
 import type { StorageAdapter } from "@puppi/sdk";
 import type { ConnectionDirection } from "@puppi/sdk/protocol";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { Binding, ExecutorEvent } from "../src/protocol.js";
 import { Shim } from "../src/shim/ctx.js";

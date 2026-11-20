@@ -11,7 +11,7 @@ import { execFile } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { LocalInput } from "../src/local/protocol.js";
 import { readOnly } from "../src/local/storage.js";

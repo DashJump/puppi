@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Client, configure, S3Store } from "../src/index.js";
 import { sha256 } from "../src/sigv4.js";

@@ -2,7 +2,7 @@
  * `puppi env webhook`: one URL per environment, a secret shown once, a test event.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { main } from "../src/index.js";
 import { type EngineCall, stubAnswers } from "./support/engine.js";

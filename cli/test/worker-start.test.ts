@@ -9,7 +9,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("node:child_process", async () => {
   const actual = await vi.importActual<typeof ChildProcess>("node:child_process");

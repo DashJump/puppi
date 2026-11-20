@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { ObjectStorageAdapter, pageIndexRef, pageKeyFor, pageStorageRef } from "../src/index.js";
 import { MemoryStore } from "./memory-store.js";

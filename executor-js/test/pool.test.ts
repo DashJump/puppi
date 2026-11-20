@@ -19,7 +19,7 @@ import type { Duplex } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { signingPayload, type SigningSubject } from "@puppi/sdk";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 import { WebSocket, WebSocketServer } from "ws";
 
 import { bundleCarryingStorage } from "./support/storage-adapters.js";

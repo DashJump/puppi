@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import ts from "typescript";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vite-plus/test";
 
 import { buildProject } from "../src/build.js";
 import { connectionTypes } from "../src/typegen.js";

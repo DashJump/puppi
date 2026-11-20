@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { build } from "rolldown";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 /**
  * `puppi build` bundles with rolldown `output.file` (cli/src/bundle.ts).

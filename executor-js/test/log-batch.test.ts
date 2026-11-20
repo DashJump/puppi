@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { batchLogs, capLine, type LogBatch } from "../src/log-batch.js";
 import type { ExecutorEvent } from "../src/protocol.js";

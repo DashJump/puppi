@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { signingPayload } from "@puppi/sdk";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 
 import { Api, ApiError, type Deployment } from "../src/api.js";
 import { pushDeployment, reportDeployment } from "../src/engine.js";

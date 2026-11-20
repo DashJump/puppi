@@ -4,7 +4,7 @@
  * reads as a success.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import type { Deployment } from "../src/api.js";
 import { main } from "../src/index.js";

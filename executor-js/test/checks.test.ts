@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import type { CheckCtx, Declaration } from "@puppi/sdk";
 import Ajv from "ajv";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { runChecks } from "../src/checks.js";
 import { reset, sdk } from "./support/registry.js";

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { pageStorageRef } from "@puppi/adapter-storage";
 import { signingPayload, type SigningSubject } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { ExecutorInput } from "../src/protocol.js";
 import { admit, fingerprintOf, parseTrustedKeys, type TrustConfig } from "../src/worker/trust.js";

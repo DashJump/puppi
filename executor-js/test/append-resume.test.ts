@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { Client as Filesystem } from "@puppi/adapter-filesystem";
 import type { Row, StorageAdapter, TableStorage } from "@puppi/sdk";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { execute, type SettleAttempt } from "../src/execute.js";
 import type { ExecutorEvent, ExecutorInput } from "../src/protocol.js";

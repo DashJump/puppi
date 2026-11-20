@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { assertConformant, formatConformance, runStorageConformance } from "@puppi/conformance";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { Client } from "../src/index.js";
 

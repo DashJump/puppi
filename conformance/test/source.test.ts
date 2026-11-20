@@ -10,7 +10,7 @@ import {
   OpenApiClient,
   requireApiVersion,
 } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { runSourceConformance, type SourceConnector } from "../src/index.js";
 

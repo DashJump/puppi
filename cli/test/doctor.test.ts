@@ -6,7 +6,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { sdkVersion } from "../src/bundle.js";
 import { main } from "../src/index.js";

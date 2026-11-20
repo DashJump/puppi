@@ -2,7 +2,7 @@ import { Client as Filesystem } from "@puppi/adapter-filesystem";
 import { Client as PostgresAdapter } from "@puppi/adapter-postgres";
 import { Client as S3 } from "@puppi/adapter-s3";
 import type { StorageAdapter } from "@puppi/sdk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { construct, isStorage } from "../src/adapters.js";
 import { TerminalError } from "../src/errors.js";

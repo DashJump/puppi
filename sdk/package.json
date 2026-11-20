@@ -39,11 +39,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/stage-bin.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
-    "test": "vitest run"
+    "test": "vp test run --config ../vite.config.ts"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4",
+    "vite-plus": "catalog:",
     "zod": "^4.6.7"
   },
   "engines": {
