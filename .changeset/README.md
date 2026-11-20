@@ -19,7 +19,7 @@ The script prints each package name, its version, and the file list from `pnpm p
 3. Export `NPM_TOKEN` in the shell. The token publishes packages in the `puppi` organization on `registry.npmjs.org`. Do not pass the token as an argument.
 4. Run `pnpm publish:packages`.
 
-The script publishes with `--access public`, in this order: `@puppi/sdk`, `@puppi/adapter-storage`, `@puppi/adapter-http`, `@puppi/adapter-filesystem`, `@puppi/adapter-postgres`, `@puppi/adapter-s3`, `@puppi/adapter-podcast-index`, `@puppi/adapter-podcast-rss`, `@puppi/executor-js`, `@puppi/cli`. It skips a version already on the registry. It exits if `.changeset/` has a `*.md` file other than this README.
+The script publishes with `--access public`. The set is every workspace package that is not `private`, dependencies first: a package is published after the workspace packages named in its `dependencies`. It skips a version already on the registry. It exits if `.changeset/` has a `*.md` file other than this README.
 
 `workspace:*` stays in git. `pnpm publish` rewrites it to the current version in the package npm receives.
 

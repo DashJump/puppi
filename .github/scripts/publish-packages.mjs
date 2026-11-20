@@ -6,6 +6,9 @@
  * and file list and does not upload. The script never prints the token and
  * never passes it on the command line. Provenance stays off.
  *
+ * The set is every workspace package that is not private, dependencies
+ * first. `--build` runs that list's `build` script and does not upload.
+ *
  * A real publish refuses unless the branch is `master` and the worktree is
  * clean, then lets pnpm check git itself. `--no-git-checks` is only on the
  * dry run: that run is used on a feature branch, and generated files often
@@ -18,23 +21,101 @@
  *   NPM_TOKEN=… pnpm publish:packages
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const ORDER = [
-  "@puppi/sdk",
-  "@puppi/adapter-storage",
-  "@puppi/adapter-http",
-  "@puppi/adapter-filesystem",
-  "@puppi/adapter-postgres",
-  "@puppi/adapter-s3",
-  "@puppi/adapter-podcast-index",
-  "@puppi/adapter-podcast-rss",
-  "@puppi/executor-js",
-  "@puppi/cli",
-];
+/**
+ * Public workspace packages, dependencies first.
+ *
+ * Private packages are left out. A package follows the public workspace
+ * packages named in its `dependencies`. Ready packages keep the order they
+ * were given, which is the `pnpm ls` order. A dependency on a private
+ * workspace package is refused: that package is not on the registry.
+ */
+export function orderPublic(packages) {
+  const byName = new Map(packages.map((pkg) => [pkg.name, pkg]));
+  const publics = packages.filter((pkg) => pkg.private !== true);
+  const remaining = new Set(publics.map((pkg) => pkg.name));
+  const blockedBy = new Map();
+
+  for (const pkg of publics) {
+    const blocked = new Set();
+
+    for (const dep of Object.keys(pkg.dependencies ?? {})) {
+      const other = byName.get(dep);
+
+      if (!other || dep === pkg.name) continue;
+
+      if (other.private === true) {
+        throw new Error(`${pkg.name} depends on ${dep}, which is private and is not published.`);
+      }
+
+      blocked.add(dep);
+    }
+
+    blockedBy.set(pkg.name, blocked);
+  }
+
+  const order = [];
+
+  const unblocked = (name) => {
+    for (const dep of blockedBy.get(name) ?? []) {
+      if (remaining.has(dep)) return false;
+    }
+
+    return true;
+  };
+
+  while (remaining.size > 0) {
+    const ready = publics.filter((pkg) => remaining.has(pkg.name) && unblocked(pkg.name));
+
+    if (ready.length === 0) {
+      throw new Error(`Public packages have a dependency cycle: ${[...remaining].join(", ")}.`);
+    }
+
+    for (const pkg of ready) {
+      order.push(pkg.name);
+      remaining.delete(pkg.name);
+    }
+  }
+
+  return order;
+}
+
+/** `pnpm -r --filter <name> … <script>` for the public packages. */
+export function recursiveArgs(names, script) {
+  return ["-r", ...names.flatMap((name) => ["--filter", name]), script];
+}
+
+/**
+ * Workspace packages from `pnpm ls`, with `dependencies` read from each
+ * package.json. `--depth -1` does not include that field.
+ */
+export function workspacePackages() {
+  const listed = JSON.parse(
+    execFileSync("pnpm", ["ls", "-r", "--depth", "-1", "--json"], { encoding: "utf8" }),
+  );
+
+  if (!Array.isArray(listed)) throw new Error("pnpm ls --json did not return a package list.");
+
+  return listed.map((pkg) => {
+    if (typeof pkg.path !== "string" || pkg.path === "") {
+      throw new Error(`pnpm ls returned no path for ${pkg.name}.`);
+    }
+
+    const manifest = JSON.parse(readFileSync(join(pkg.path, "package.json"), "utf8"));
+
+    return {
+      name: pkg.name,
+      version: manifest.version ?? pkg.version,
+      path: pkg.path,
+      private: pkg.private === true || manifest.private === true,
+      dependencies: manifest.dependencies ?? {},
+    };
+  });
+}
 
 /** Directory of the npmrc for this process. Unset once it has been removed. */
 let npmrcDir;
@@ -142,7 +223,37 @@ export function publishArgs(name, { dryRun }) {
   return args;
 }
 
+/**
+ * `pnpm --dir` publish. Recursive `--filter` publish skips a version that is
+ * already on the registry and prints no file list. The dry run uses this
+ * when that happens, so the file list is still printed.
+ */
+export function publishDirArgs(dir, { dryRun }) {
+  const args = ["--dir", dir, "publish", "--access", "public", "--yes"];
+
+  if (dryRun) args.push("--no-git-checks", "--dry-run", "--json");
+
+  return args;
+}
+
+/** The pack manifest for one package. pnpm returns an array from `--filter` and one object from `--dir`. */
+export function publishEntry(summary, name, version) {
+  const entries = Array.isArray(summary) ? summary : [summary];
+
+  return entries.find(
+    (item) => item && item.name === name && item.version === version && Array.isArray(item.files),
+  );
+}
+
 function main() {
+  const listed = workspacePackages();
+  const order = orderPublic(listed);
+
+  if (process.argv.includes("--build")) {
+    execFileSync("pnpm", recursiveArgs(order, "build"), { stdio: "inherit" });
+    return;
+  }
+
   armNpmrcCleanup();
 
   try {
@@ -158,24 +269,12 @@ function main() {
       process.exit(1);
     }
 
-    const listed = JSON.parse(
-      execFileSync("pnpm", ["ls", "-r", "--depth", "-1", "--json"], { encoding: "utf8" }),
-    );
-    const publics = listed.filter((pkg) => pkg.private !== true).map((pkg) => pkg.name);
-    const same = publics.length === ORDER.length && publics.every((name) => ORDER.includes(name));
-
-    if (!same) {
-      process.stderr.write(`Public packages are ${publics.sort().join(", ")}.\n`);
-      process.stderr.write(`This script publishes ${ORDER.join(", ")}.\n`);
-      process.exit(1);
-    }
-
     assertPublishable({ dryRun });
 
     const byName = new Map(listed.map((pkg) => [pkg.name, pkg]));
     const childEnv = publishEnv({ dryRun });
 
-    for (const name of ORDER) {
+    for (const name of order) {
       const pkg = byName.get(name);
       const version = pkg.version;
 
@@ -198,10 +297,19 @@ function main() {
         env: childEnv,
         stdio: ["inherit", "pipe", "inherit"],
       });
-      const summary = JSON.parse(raw);
-      const entry = Array.isArray(summary) ? summary.find((item) => item.name === name) : undefined;
+      let entry = publishEntry(JSON.parse(raw), name, version);
 
-      if (!entry || entry.version !== version || !Array.isArray(entry.files)) {
+      if (!entry) {
+        const packed = execFileSync("pnpm", publishDirArgs(pkg.path, { dryRun: true }), {
+          encoding: "utf8",
+          env: childEnv,
+          stdio: ["inherit", "pipe", "inherit"],
+        });
+
+        entry = publishEntry(JSON.parse(packed), name, version);
+      }
+
+      if (!entry) {
         process.stderr.write(
           `pnpm publish --dry-run returned no file list for ${name}@${version}.\n`,
         );

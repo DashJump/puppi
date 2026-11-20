@@ -50,7 +50,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build public packages
-        run: pnpm -r --filter @puppi/sdk --filter @puppi/adapter-storage --filter @puppi/adapter-http --filter @puppi/adapter-filesystem --filter @puppi/adapter-postgres --filter @puppi/adapter-s3 --filter @puppi/adapter-podcast-index --filter @puppi/adapter-podcast-rss --filter @puppi/executor-js --filter @puppi/cli build
+        run: node .github/scripts/publish-packages.mjs --build
 
       - name: Publish
         env:

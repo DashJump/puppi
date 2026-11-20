@@ -28,6 +28,8 @@
     // CI scripts. `knip --production` does not follow workflow steps.
     ".github/**",
     "**/bundle.js",
+    // vite.config.ts imports this as .oxlintrc.js. Knip does not follow that specifier.
+    ".oxlintrc.ts",
   ],
   "workspaces": {
     // `node dist/egress-probes.js` runs the list. Nothing imports it.

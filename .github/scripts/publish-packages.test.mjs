@@ -51,6 +51,92 @@ void test("publish arguments keep --no-git-checks and provenance off the real pu
   assert.deepEqual(dry.slice(-3), ["--no-git-checks", "--dry-run", "--json"]);
 });
 
+void test("publish order is the public packages, dependencies first", async () => {
+  const { orderPublic } = await import("./publish-packages.mjs");
+  const order = orderPublic([
+    {
+      name: "@puppi/cli",
+      dependencies: { "@puppi/executor-js": "workspace:*", "es-toolkit": "^1.0.0" },
+    },
+    { name: "@puppi/conformance", private: true, dependencies: { "@puppi/sdk": "workspace:*" } },
+    {
+      name: "@puppi/executor-js",
+      dependencies: { "@puppi/sdk": "workspace:*", "@puppi/adapter-storage": "workspace:*" },
+    },
+    { name: "@puppi/sdk", dependencies: {} },
+    { name: "@puppi/adapter-storage", dependencies: { "@puppi/sdk": "workspace:*" } },
+    { name: "@puppi/adapter-http", dependencies: { "@puppi/sdk": "workspace:*" } },
+  ]);
+
+  assert.deepEqual(order, [
+    "@puppi/sdk",
+    "@puppi/adapter-storage",
+    "@puppi/adapter-http",
+    "@puppi/executor-js",
+    "@puppi/cli",
+  ]);
+});
+
+void test("a public package that depends on a private workspace package is refused", async () => {
+  const { orderPublic } = await import("./publish-packages.mjs");
+
+  assert.throws(
+    () =>
+      orderPublic([
+        { name: "@puppi/adapter-http", dependencies: { "@puppi/conformance": "workspace:*" } },
+        { name: "@puppi/conformance", private: true, dependencies: {} },
+      ]),
+    /@puppi\/adapter-http depends on @puppi\/conformance, which is private/,
+  );
+});
+
+void test("a dependency cycle is refused", async () => {
+  const { orderPublic } = await import("./publish-packages.mjs");
+
+  assert.throws(
+    () =>
+      orderPublic([
+        { name: "@puppi/sdk", dependencies: { "@puppi/cli": "workspace:*" } },
+        { name: "@puppi/cli", dependencies: { "@puppi/sdk": "workspace:*" } },
+      ]),
+    /dependency cycle/,
+  );
+});
+
+void test("a filtered publish manifest and a directory publish manifest both count", async () => {
+  const { publishEntry } = await import("./publish-packages.mjs");
+  const files = [{ path: "dist/index.js" }, { path: "README.md" }, { path: "package.json" }];
+  const entry = { name: "@puppi/sdk", version: "0.3.0", files };
+
+  assert.equal(publishEntry([entry], "@puppi/sdk", "0.3.0"), entry);
+  assert.equal(publishEntry(entry, "@puppi/sdk", "0.3.0"), entry);
+  assert.equal(publishEntry([], "@puppi/sdk", "0.3.0"), undefined);
+  assert.equal(publishEntry([{ ...entry, version: "0.0.0" }], "@puppi/sdk", "0.3.0"), undefined);
+});
+
+void test("a directory publish keeps git checks off the dry run", async () => {
+  const { publishDirArgs } = await import("./publish-packages.mjs");
+  const real = publishDirArgs("/repo/sdk", { dryRun: false });
+  const dry = publishDirArgs("/repo/sdk", { dryRun: true });
+
+  assert.deepEqual(real.slice(0, 2), ["--dir", "/repo/sdk"]);
+  assert.equal(real.includes("--no-git-checks"), false);
+  assert.deepEqual(dry.slice(-3), ["--no-git-checks", "--dry-run", "--json"]);
+});
+
+void test("recursive build args filter each public package", async () => {
+  const { recursiveArgs } = await import("./publish-packages.mjs");
+
+  assert.deepEqual(recursiveArgs(["@puppi/sdk", "@puppi/adapter-http"], "build"), [
+    "-r",
+    "--filter",
+    "@puppi/sdk",
+    "--filter",
+    "@puppi/adapter-http",
+    "build",
+  ]);
+});
+
 void test("a real publish from a branch other than master is refused before upload", async () => {
   // assertPublishable reads the git checkout of the process. This temp repo
   // is on the branch topic, so the refusal does not depend on the branch that
