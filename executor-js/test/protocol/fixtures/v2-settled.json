@@ -1,0 +1,6 @@
+{
+  "message": "settled",
+  "attempt_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "fence": 1,
+  "outcome": "recorded"
+}

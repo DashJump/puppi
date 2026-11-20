@@ -1,0 +1,55 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Podcast RSS and Atom",
+    "version": "2.0",
+    "description": "RSS 2.0 (https://www.rssboard.org/rss-specification) and Atom 1.0 (RFC 4287) publish no OpenAPI document. A feed is XML. This file is the JSON the client reads after it normalizes one document. episodes({ feed_url }) GETs that absolute URL and stamps episode_id, feed_id, and observed_at onto each row."
+  },
+  "paths": {
+    "/feed": {
+      "get": {
+        "operationId": "getFeed",
+        "responses": {
+          "200": {
+            "description": "One normalized feed document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["episodes"],
+                  "properties": {
+                    "next": { "type": "string", "nullable": true },
+                    "episodes": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/episode" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "episode": {
+        "type": "object",
+        "properties": {
+          "guid": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "published_at": { "type": "string", "format": "date-time" },
+          "audio_url": { "type": "string" },
+          "audio_type": { "type": "string", "nullable": true },
+          "audio_bytes": { "type": "integer", "format": "int64", "nullable": true },
+          "duration_sec": { "type": "integer", "nullable": true },
+          "episode_url": { "type": "string", "nullable": true },
+          "season": { "type": "integer", "nullable": true },
+          "episode_n": { "type": "integer", "nullable": true }
+        }
+      }
+    }
+  }
+}

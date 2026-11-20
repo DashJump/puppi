@@ -1,0 +1,56 @@
+{
+  "status": "true",
+  "count": 3,
+  "items": [
+    {
+      "id": 30,
+      "title": "Newest",
+      "description": "The full description.",
+      "guid": "episode-guid-30",
+      "datePublished": 1612125800,
+      "duration": 1800,
+      "link": "https://example.test/ep30",
+      "enclosureUrl": "https://example.test/ep30.mp3",
+      "enclosureType": "audio/mpeg",
+      "enclosureLength": 4987654,
+      "explicit": 1,
+      "episode": 3,
+      "season": 2,
+      "episodeType": "full",
+      "image": "https://example.test/ep30.jpg",
+      "feedId": 75075
+    },
+    {
+      "id": 20,
+      "title": "Middle",
+      "description": "Middle episode.",
+      "guid": "episode-guid-20",
+      "datePublished": 1612000000,
+      "duration": 900,
+      "enclosureUrl": "https://example.test/ep20.mp3",
+      "enclosureType": "audio/mpeg",
+      "explicit": 0,
+      "episode": 2,
+      "season": 2,
+      "episodeType": "full",
+      "image": "https://example.test/ep20.jpg",
+      "feedId": 75075
+    },
+    {
+      "id": 10,
+      "title": "Oldest",
+      "description": "Oldest episode.",
+      "guid": "episode-guid-10",
+      "datePublished": 1611000000,
+      "duration": 600,
+      "enclosureUrl": "https://example.test/ep10.mp3",
+      "enclosureType": "audio/mpeg",
+      "explicit": 0,
+      "episode": 1,
+      "season": 1,
+      "episodeType": "trailer",
+      "feedId": 75075
+    }
+  ],
+  "description": "Found matching episodes."
+}

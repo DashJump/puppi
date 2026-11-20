@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Paged</title>
+    <atom:link rel="next" href="page2.xml"/>
+    <item>
+      <guid>p1</guid>
+      <title>Page One</title>
+      <pubDate>Wed, 01 Jan 2020 00:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.test/p1.mp3" type="audio/mpeg" length="1"/>
+    </item>
+  </channel>
+</rss>

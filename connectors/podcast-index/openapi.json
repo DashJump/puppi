@@ -1,0 +1,248 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Podcast Index API",
+    "version": "1.12.1",
+    "description": "Trimmed from https://podcastindex-org.github.io/docs-api/pi_api.json (1.12.1) to the operations this package calls. Auth is X-Auth-Key, X-Auth-Date, and Authorization = sha1(apiKey + apiSecret + unixTime) as lowercase hex. The API version this client calls is the /api/1.0 prefix, not info.version."
+  },
+  "servers": [{ "url": "https://api.podcastindex.org/api/1.0" }],
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Auth-Key"
+      },
+      "authDate": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Auth-Date"
+      },
+      "authorization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "sha1(X-Auth-Key + api secret + X-Auth-Date), lowercase hex."
+      }
+    },
+    "schemas": {
+      "feed": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "podcastGuid": { "type": "string" },
+          "title": { "type": "string" },
+          "url": { "type": "string" },
+          "link": { "type": "string" },
+          "description": { "type": "string" },
+          "author": { "type": "string" },
+          "image": { "type": "string" },
+          "artwork": { "type": "string" },
+          "lastUpdateTime": { "type": "integer" },
+          "newestItemPublishTime": { "type": "integer" },
+          "newestItemPubdate": { "type": "integer" },
+          "language": { "type": "string" },
+          "explicit": { "type": "boolean" },
+          "episodeCount": { "type": "integer" },
+          "itunesId": { "type": "integer" },
+          "categories": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "episode": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "guid": { "type": "string" },
+          "datePublished": { "type": "integer" },
+          "duration": { "type": "integer" },
+          "link": { "type": "string" },
+          "enclosureUrl": { "type": "string" },
+          "enclosureType": { "type": "string" },
+          "enclosureLength": { "type": "integer" },
+          "explicit": { "type": "integer" },
+          "episode": { "type": "integer" },
+          "season": { "type": "integer" },
+          "episodeType": { "type": "string" },
+          "image": { "type": "string" },
+          "feedId": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/categories/list": {
+      "get": {
+        "operationId": "listCategories",
+        "summary": "Category list, the cheap authenticated check.",
+        "responses": {
+          "200": {
+            "description": "The category list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "status": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/podcasts/byfeedid": {
+      "get": {
+        "operationId": "podcastByFeedId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One feed, or status false when it is unknown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "feed": { "$ref": "#/components/schemas/feed" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/podcasts/byfeedurl": {
+      "get": {
+        "operationId": "podcastByFeedUrl",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One feed, or status false when it is unknown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "feed": { "$ref": "#/components/schemas/feed" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/byterm": {
+      "get": {
+        "operationId": "searchPodcasts",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "max", "in": "query", "schema": { "type": "integer" } },
+          { "name": "fulltext", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feeds matching the term in the title, author, or owner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "count": { "type": "integer" },
+                    "feeds": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/feed" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/episodes/byfeedid": {
+      "get": {
+        "operationId": "episodesByFeedId",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "since", "in": "query", "schema": { "type": "integer" } },
+          { "name": "max", "in": "query", "schema": { "type": "integer", "maximum": 1000 } },
+          { "name": "fulltext", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Episodes for one or more feed ids, newest first. max cannot exceed 1000.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "count": { "type": "integer" },
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/episode" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/episodes/byfeedurl": {
+      "get": {
+        "operationId": "episodesByFeedUrl",
+        "parameters": [
+          { "name": "url", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "since", "in": "query", "schema": { "type": "integer" } },
+          { "name": "max", "in": "query", "schema": { "type": "integer", "maximum": 1000 } },
+          { "name": "fulltext", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Episodes for one feed URL, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "count": { "type": "integer" },
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/episode" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

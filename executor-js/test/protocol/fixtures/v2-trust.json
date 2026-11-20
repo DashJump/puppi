@@ -1,0 +1,34 @@
+{
+  "ready": {
+    "message": "ready",
+    "slots": 1,
+    "secrets": ["warehouse_password"]
+  },
+  "worker_secrets": {
+    "warehouse": { "password": "warehouse_password" }
+  },
+  "signatures": {
+    "deployment": {
+      "bundle_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signature": "c2lnbmF0dXJl",
+      "signing_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    },
+    "environment": {
+      "name": "prod",
+      "storage_prefix": "prod",
+      "signature": "c2lnbmF0dXJl",
+      "signing_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    },
+    "bindings": {
+      "warehouse": {
+        "name": "warehouse",
+        "type": "postgres",
+        "config": { "host": "127.0.0.1", "port": 5432 },
+        "secret_refs": { "password": "warehouse_password" },
+        "mode": "live",
+        "signature": "c2lnbmF0dXJl",
+        "signing_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  // Package entry points keep their exports. `package.json` `exports` and `bin` are that API.
+  "includeEntryExports": false,
+  // A function the file itself calls is not dead. Tests may import the export.
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "exports": "error",
+    "types": "error",
+    "nsExports": "error",
+    "nsTypes": "error",
+    "duplicates": "off",
+    "enumMembers": "off",
+    "namespaceMembers": "off",
+    "cycles": "off",
+    "devDependencies": "off",
+    "binaries": "off",
+    "unlisted": "off",
+    "unresolved": "off",
+  },
+  "ignoreIssues": {
+    // openapi-typescript emits every schema type. Adapters import the slice they call.
+    "connectors/*/src/openapi.ts": ["exports", "types", "nsExports", "nsTypes"],
+  },
+  "ignoreFiles": [
+    // CI scripts. `knip --production` does not follow workflow steps.
+    ".github/**",
+    "**/bundle.js",
+  ],
+  "workspaces": {
+    // `node dist/egress-probes.js` runs the list. Nothing imports it.
+    "executor-js": {
+      "entry": ["src/egress-probes.ts!"],
+    },
+    // The build copies bin/puppi.js into dist, and runs write-versions.mjs before tsc.
+    // `package.json` `bin` points at the copy. Production mode does not follow `build`.
+    // harness.ts spawns the executor package by name.
+    "cli": {
+      "entry": ["bin/puppi.js!", "scripts/stage-bin.mjs!", "scripts/write-versions.mjs!"],
+      "ignoreDependencies": ["@puppi/executor-js"],
+    },
+    "sdk": {
+      "entry": ["scripts/stage-bin.mjs!", "scripts/write-operations.mjs!"],
+    },
+  },
+}

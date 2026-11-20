@@ -1,0 +1,46 @@
+{
+  "name": "puppi",
+  "private": true,
+  "description": "TypeScript packages for Puppi pipelines.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "publish:dry-run": "node .github/scripts/publish-packages.mjs --dry-run",
+    "publish:packages": "node .github/scripts/publish-packages.mjs",
+    "test": "node --test .github/scripts/publish-packages.test.mjs && pnpm -r test",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r typecheck",
+    "lint": "oxlint --deny-warnings",
+    "lint:types": "oxlint --type-aware --deny-warnings",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "deadcode": "knip --production",
+    "check": "pnpm lint && pnpm lint:types && pnpm format:check && pnpm typecheck"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^26.6.5",
+    "knip": "^6.45.1",
+    "oxfmt": "^0.68.0",
+    "oxlint": "1.83.0",
+    "oxlint-tsgolint": "7.0.2002",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=26",
+      "onFail": "error"
+    }
+  },
+  "packageManager": "pnpm@12.4.2"
+}

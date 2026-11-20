@@ -1,0 +1,36 @@
+# Drops private and link-local destinations. The worker binds no port, so
+# every loopback destination is dropped too. Port 53 is allowed only to
+# 1.1.1.1 and 2606:4700:4700::1111. Public traffic stays on the accept policy.
+table inet puppi {
+  chain egress {
+    type filter hook output priority 0; policy accept;
+
+    udp dport 53 ip daddr 1.1.1.1 accept
+    tcp dport 53 ip daddr 1.1.1.1 accept
+    udp dport 53 ip6 daddr 2606:4700:4700::1111 accept
+    tcp dport 53 ip6 daddr 2606:4700:4700::1111 accept
+    udp dport 53 ip6 daddr ::ffff:1.1.1.1 accept
+    tcp dport 53 ip6 daddr ::ffff:1.1.1.1 accept
+    udp dport 53 drop
+    tcp dport 53 drop
+
+    ip daddr 0.0.0.0/8 drop
+    ip daddr 169.254.0.0/16 drop
+    ip daddr 10.0.0.0/8 drop
+    ip daddr 172.16.0.0/12 drop
+    ip daddr 192.168.0.0/16 drop
+    ip daddr 100.64.0.0/10 drop
+    ip6 daddr fc00::/7 drop
+    ip6 daddr fe80::/10 drop
+    ip6 daddr ::ffff:169.254.0.0/112 drop
+    ip6 daddr ::ffff:10.0.0.0/104 drop
+    ip6 daddr ::ffff:172.16.0.0/108 drop
+    ip6 daddr ::ffff:192.168.0.0/112 drop
+    ip6 daddr ::ffff:100.64.0.0/106 drop
+    ip6 daddr ::ffff:127.0.0.0/104 drop
+
+    ip daddr 127.0.0.0/8 drop
+    ip6 daddr :: drop
+    ip6 daddr ::1 drop
+  }
+}

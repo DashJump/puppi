@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Slice Cast</title>
+    <itunes:author>Ada</itunes:author>
+    <item>
+      <title>Tom &amp; Jerry</title>
+      <guid isPermaLink="false">ep-1</guid>
+      <pubDate>Fri, 26 Feb 2021 00:00:00 -0500</pubDate>
+      <link>https://example.test/ep-1</link>
+      <itunes:author>Grace</itunes:author>
+      <itunes:duration>01:02:03</itunes:duration>
+      <itunes:episode>3</itunes:episode>
+      <itunes:season>2</itunes:season>
+      <itunes:explicit>yes</itunes:explicit>
+      <itunes:image href="https://example.test/ep-1.jpg"/>
+      <description>short</description>
+      <content:encoded><![CDATA[full <b>notes</b>]]></content:encoded>
+      <enclosure url="https://cdn.test/ep-1.mp3" type="audio/mpeg" length="1234"/>
+    </item>
+    <item>
+      <title>Video first</title>
+      <guid>ep-2</guid>
+      <pubDate>2024-03-01T12:00:00Z</pubDate>
+      <itunes:duration>2:03</itunes:duration>
+      <enclosure url="https://cdn.test/ep-2.mp4" type="video/mp4" length="9"/>
+      <enclosure url="https://cdn.test/ep-2.mp3" type="audio/mpeg" length="99"/>
+    </item>
+    <item>
+      <title>No guid</title>
+      <pubDate>Mon, 01 Mar 2021 00:00:00 GMT</pubDate>
+      <itunes:duration>nope</itunes:duration>
+      <itunes:episode>soon</itunes:episode>
+      <itunes:explicit>maybe</itunes:explicit>
+      <enclosure url="https://cdn.test/noguid.mp3" length="n/a" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>  Odd  </title>
+      <pubDate>not-a-date</pubDate>
+      <enclosure url="https://cdn.test/odd.mp3" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>No audio</title>
+      <guid>silent</guid>
+      <pubDate>Tue, 02 Mar 2021 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

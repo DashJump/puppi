@@ -1,0 +1,50 @@
+{
+  "name": "@puppi/adapter-postgres",
+  "version": "0.1.1",
+  "description": "Storage adapter for Postgres. One materialization is one table.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "connectors/postgres"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@puppi/adapter-storage": "workspace:*",
+    "@puppi/sdk": "workspace:*",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@puppi/conformance": "workspace:*",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

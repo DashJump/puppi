@@ -1,0 +1,55 @@
+{
+  "name": "@puppi/cli",
+  "version": "0.2.0",
+  "description": "The puppi command: build a pipeline, deploy it, and run it.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "cli"
+  },
+  "bin": {
+    "puppi": "./dist/puppi.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/write-versions.mjs --check && tsc -p tsconfig.json && node scripts/stage-bin.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@puppi/executor-js": "workspace:*",
+    "@puppi/sdk": "workspace:*",
+    "es-toolkit": "^1.52.0",
+    "oxc-parser": "^0.150.0",
+    "rolldown": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

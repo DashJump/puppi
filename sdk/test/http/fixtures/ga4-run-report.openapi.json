@@ -1,0 +1,219 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Google Analytics Data API",
+    "version": "v1beta",
+    "description": "Trimmed from the Analytics Data API v1beta discovery document to properties.runReport, properties.getMetadata, and properties.batchRunReports. https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport"
+  },
+  "paths": {
+    "/v1beta/properties/{property}:runReport": {
+      "post": {
+        "operationId": "properties.runReport",
+        "description": "Returns a customized report of your Google Analytics event data.",
+        "parameters": [
+          {
+            "name": "property",
+            "in": "path",
+            "required": true,
+            "description": "Numeric Google Analytics property id. The discovery document writes this as properties/1234 on the reserved path {+property}; this trimmed spec uses the flat path so the segment stays one id.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunReportRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RunReportResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1beta/properties/{property}/metadata": {
+      "get": {
+        "operationId": "properties.getMetadata",
+        "description": "Returns metadata for dimensions and metrics available in reporting methods.",
+        "parameters": [
+          {
+            "name": "property",
+            "in": "path",
+            "required": true,
+            "description": "Numeric Google Analytics property id. The discovery flat path is v1beta/properties/{propertiesId}/metadata.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Metadata" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1beta/properties/{property}:batchRunReports": {
+      "post": {
+        "operationId": "properties.batchRunReports",
+        "description": "Returns multiple reports in a batch.",
+        "parameters": [
+          {
+            "name": "property",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RunReportRequest": {
+        "type": "object",
+        "description": "The request to generate a report.",
+        "properties": {
+          "dimensions": {
+            "type": "array",
+            "description": "The dimensions requested and displayed.",
+            "items": { "$ref": "#/components/schemas/Dimension" }
+          },
+          "metrics": {
+            "type": "array",
+            "description": "The metrics requested and displayed.",
+            "items": { "$ref": "#/components/schemas/Metric" }
+          },
+          "dateRanges": {
+            "type": "array",
+            "description": "Date ranges of data to read.",
+            "items": { "$ref": "#/components/schemas/DateRange" }
+          },
+          "offset": {
+            "type": "string",
+            "format": "int64",
+            "description": "The row count of the start row. The first row is counted as row 0."
+          },
+          "limit": {
+            "type": "string",
+            "format": "int64",
+            "description": "The number of rows to return. If unspecified, 10,000 rows are returned."
+          }
+        }
+      },
+      "Dimension": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "Metric": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "DateRange": {
+        "type": "object",
+        "properties": {
+          "startDate": { "type": "string" },
+          "endDate": { "type": "string" }
+        }
+      },
+      "RunReportResponse": {
+        "type": "object",
+        "description": "The response report table corresponding to a request.",
+        "properties": {
+          "dimensionHeaders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" }
+              }
+            }
+          },
+          "metricHeaders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" }
+              }
+            }
+          },
+          "rows": {
+            "type": "array",
+            "description": "Rows of dimension value combinations and metric values in the report.",
+            "items": { "$ref": "#/components/schemas/Row" }
+          },
+          "rowCount": {
+            "type": "integer",
+            "description": "The total number of rows in the query result, independent of limit and offset."
+          },
+          "metadata": { "type": "object" },
+          "kind": { "type": "string" }
+        }
+      },
+      "Row": {
+        "type": "object",
+        "properties": {
+          "dimensionValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": { "type": "string" }
+              }
+            }
+          },
+          "metricValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Metadata": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      }
+    }
+  }
+}

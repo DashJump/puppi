@@ -1,0 +1,35 @@
+{
+  "public_key": "ed25519:O/d2JeGOM8sTZnzWfO0WtOzWP/k1Yo0Co5vzvIqUUp8=",
+  "fingerprint": "b24c9f16c4d63525a874cf87f63011b1b88a7bf279a3b6f35726d62e75c890bc",
+  "subjects": {
+    "deployment": {
+      "kind": "deployment",
+      "bundle_digest": "sha256:abababababababababababababababababababababababababababababababab"
+    },
+    "environment": {
+      "kind": "environment",
+      "name": "prod",
+      "storage_prefix": "out"
+    },
+    "binding": {
+      "kind": "binding",
+      "name": "warehouse",
+      "type": "filesystem",
+      "config": {
+        "root": "/data"
+      },
+      "secret_refs": {},
+      "mode": "live"
+    }
+  },
+  "payloads": {
+    "deployment": "{\"bundle_digest\":\"sha256:abababababababababababababababababababababababababababababababab\",\"kind\":\"deployment\"}",
+    "environment": "{\"kind\":\"environment\",\"name\":\"prod\",\"storage_prefix\":\"out\"}",
+    "binding": "{\"config\":{\"root\":\"/data\"},\"kind\":\"binding\",\"mode\":\"live\",\"name\":\"warehouse\",\"secret_refs\":{},\"type\":\"filesystem\"}"
+  },
+  "signatures": {
+    "deployment": "O3fp/WBr/RPmNFAfe4yJ+asaV0oiJf1T2cYThO3pfahsJTcttOf+6r6zaeSfhZAH3zRcweY5nYl+Odi8u0I3Cw==",
+    "environment": "PmnDznVNVBlnmc8SaiPD7kT3VyCfTVCbb5yYmJgQa4UK4yQvih7btF6ywxcnzkI70KfHTrE3kOKryIlSRjmSDQ==",
+    "binding": "m14Q8Kj+CCk0oQBQXShmxHX9v612EjiBl2ARJAH2MjHHDbMhAsV1+QWa0bVfPu4MaK093SxcXwrSsnDzzAIoDw=="
+  }
+}

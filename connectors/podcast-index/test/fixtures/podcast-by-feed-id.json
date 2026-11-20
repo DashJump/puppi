@@ -1,0 +1,22 @@
+{
+  "status": "true",
+  "query": { "id": "75075" },
+  "feed": {
+    "id": 75075,
+    "podcastGuid": "9b024349-ccf0-5f69-a609-6b82873eab3c",
+    "title": "Batman University",
+    "url": "https://feeds.theincomparable.com/batmanuniversity",
+    "link": "https://www.theincomparable.com/batmanuniversity/",
+    "description": "A podcast about Batman.",
+    "author": "The Incomparable",
+    "image": "https://example.test/image.jpg",
+    "artwork": "https://example.test/artwork.jpg",
+    "lastUpdateTime": 1612125785,
+    "language": "en",
+    "explicit": false,
+    "episodeCount": 42,
+    "itunesId": 123456,
+    "categories": { "104": "Tv", "105": "Film" }
+  },
+  "description": "Found matching feeds."
+}
