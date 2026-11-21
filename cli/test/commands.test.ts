@@ -1008,7 +1008,7 @@ describe("puppi env", () => {
     stdout = "";
     expect(await main(["env", "--help"])).toBe(0);
     expect(stdout).toContain("[--executor hosted|remote]");
-    expect(stdout).toContain("hosted when omitted");
+    expect(stdout).toContain("The CLI creates a hosted environment when --executor is omitted.");
     expect(stdout).not.toContain("local|remote|hosted");
   });
 

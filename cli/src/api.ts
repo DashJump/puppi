@@ -7,10 +7,7 @@
  */
 
 /**
- * Placements this CLI sets. Hosted workers are the default. Remote is the
- * opt-in for a pool the customer runs. Setters check a value against this
- * list. Readers do not: a stored executor this list does not name, including
- * one set by an engine mix task, is printed as the server sent it.
+ * The placements the CLI accepts. A new environment is hosted.
  */
 export const PLACEMENTS = ["hosted", "remote"] as const;
 

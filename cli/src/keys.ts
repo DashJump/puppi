@@ -26,26 +26,23 @@ import { type Command, type Outcome, done, helpBlock } from "./command.js";
 import { err, out } from "./print.js";
 
 /**
- * Printed when this command leaves an unsigned row and the executor is not
- * hosted. A row that keeps the signature it already has does not get this
- * line. Exit stays 0. A re-bind that would change a signed config exits 2
- * without this line.
+ * The CLI prints this for an unsigned row when the executor is neither
+ * hosted nor remote. The command exits 0.
  */
 const UNSIGNED_WARNING =
   "NOT SIGNED. A worker with trusted keys will refuse this. " +
   "Set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 
 /**
- * The signing warning for a remote executor. One sentence. A remote worker
- * checks signatures. Hosted prints nothing.
+ * The CLI prints this for an unsigned row on a remote executor. A remote
+ * worker checks signatures.
  */
 const REMOTE_UNSIGNED =
   "A remote worker with trusted keys will refuse this unsigned row until you set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 
 /**
- * A hosted worker does not check signatures. A remote worker with trusted
- * keys does. Any other stored value keeps the unsigned warning, because
- * hiding that line without knowing the executor is the wrong default.
+ * Hosted workers do not check signatures. The CLI skips the unsigned warning
+ * and the key comparison for a hosted executor.
  */
 export function skipsSignatureCheck(executor: string | undefined): executor is "hosted" {
   return executor === "hosted";
@@ -54,7 +51,7 @@ export function skipsSignatureCheck(executor: string | undefined): executor is "
 export function warnUnsigned(executor?: string): void {
   if (skipsSignatureCheck(executor)) return;
 
-  // stderr, so `env create --json` and `env bind --json` stay JSON on stdout.
+  // The CLI prints this on stderr so `env create --json` and `env bind --json` stay JSON on stdout.
   err(executor === "remote" ? REMOTE_UNSIGNED : UNSIGNED_WARNING);
 }
 

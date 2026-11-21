@@ -33,7 +33,7 @@ function run(...argv: string[]): Promise<number> {
   return main([...argv, "--engine-url", "http://engine:4000", "--env", "prod", "--dir", dir]);
 }
 
-/** The one sentence an unsigned remote write prints. Hosted prints nothing. */
+/** The warning the CLI prints for an unsigned remote write. */
 const REMOTE_UNSIGNED =
   "A remote worker with trusted keys will refuse this unsigned row until you set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 

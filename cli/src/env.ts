@@ -218,9 +218,9 @@ export async function ensureDefaultEnvironment(
 }
 
 /**
- * Idempotent. When `executor` is a placement and the stored one differs,
- * the environment is moved. A missing name is created as hosted when no
- * placement was given.
+ * The CLI creates the environment, or returns the row that is already there.
+ * It moves that row when `executor` is hosted or remote and the stored value
+ * differs. A new environment is hosted when `executor` is omitted.
  */
 async function ensureEnvironment(
   api: Api,
@@ -275,12 +275,6 @@ async function ensureEnvironment(
   };
 }
 
-/**
- * A name is required. `--executor` defaults to hosted, so an omitted flag
- * is not an error. A value that is not hosted or remote is wrong either
- * way, and the example is a command that would work. An existing name may
- * omit `--executor` and keeps its executor. That is checked after the lookup.
- */
 function missingCreate(name: string | undefined, executor: string | undefined): string | undefined {
   const example = name ?? "prod";
   const badExecutor = executor !== undefined && !isPlacement(executor);
@@ -311,9 +305,8 @@ async function create(
 
   const signingKey = await loadSigningKey(dir, flag(args, "signing-key"));
 
-  // Moving onto an executor that checks signatures does not re-sign an
-  // existing row. Compare the key before that write. Hosted does not
-  // check, so it does not come here.
+  // The CLI compares the signing key before this write. Moving an environment
+  // onto an executor that checks signatures does not re-sign the existing row.
   if (executor !== undefined && !skipsSignatureCheck(executor) && signingKey) {
     const stored = (await api.get<Environment[]>("/environments")).find((env) => env.name === name);
 
@@ -723,7 +716,7 @@ export const env: Command<EnvResult> = {
       "  puppi env list                       every environment",
       "  puppi env show                       one environment's bindings and secrets",
       `  puppi env create <name>              [${EXECUTOR_USAGE}]`,
-      "                                       hosted when omitted",
+      "                                       The CLI creates a hosted environment when --executor is omitted.",
       "                                       [--storage-prefix <p>] [--kind preview]",
     ]),
     helpBlock(210, [

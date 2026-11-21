@@ -32,7 +32,7 @@ puppi run --wait --env prod
 puppi status --env prod
 ```
 
-`puppi env create` uses hosted workers. Pass `--executor remote` for a worker pool you run. `--executor hosted` still selects hosted when you pass it.
+`puppi env create` creates a hosted environment. Pass `--executor remote` for a worker pool you run.
 
 `puppi doctor` checks that the engine answers, the token is accepted, and this project's SDK matches the engine.
 
@@ -77,7 +77,7 @@ puppi env show --env prod
 puppi place hosted
 ```
 
-`puppi env create` uses hosted workers. Pass `--executor remote` for a worker pool you run. `puppi place hosted` sets hosted on every environment. `puppi place remote` sets remote on every environment.
+`puppi place hosted` sets hosted on every environment. `puppi place remote` sets remote on every environment.
 
 ### Bind a declared connection
 
