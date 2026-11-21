@@ -26,32 +26,36 @@ import { type Command, type Outcome, done, helpBlock } from "./command.js";
 import { err, out } from "./print.js";
 
 /**
- * Printed when this command leaves a row with no signature. A row that
- * keeps the signature it already has does not get this line. Exit stays 0.
- * A re-bind that would change a signed config exits 2 without this line.
+ * Printed when this command leaves an unsigned row and the executor is not
+ * hosted. A row that keeps the signature it already has does not get this
+ * line. Exit stays 0. A re-bind that would change a signed config exits 2
+ * without this line.
  */
 const UNSIGNED_WARNING =
   "NOT SIGNED. A worker with trusted keys will refuse this. " +
   "Set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 
 /**
- * A remote worker with trusted keys refuses an unsigned row. A local
- * executor does not check signatures, and neither does `hosted`. Any other
- * value keeps `NOT SIGNED`, because hiding that line without knowing the
- * executor is the wrong default.
+ * The signing warning for a remote executor. One sentence. A remote worker
+ * checks signatures. Hosted prints nothing.
  */
-export function skipsSignatureCheck(executor: string | undefined): executor is "local" | "hosted" {
-  return executor === "local" || executor === "hosted";
+const REMOTE_UNSIGNED =
+  "A remote worker with trusted keys will refuse this unsigned row until you set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
+
+/**
+ * A hosted worker does not check signatures. A remote worker with trusted
+ * keys does. Any other stored value keeps the unsigned warning, because
+ * hiding that line without knowing the executor is the wrong default.
+ */
+export function skipsSignatureCheck(executor: string | undefined): executor is "hosted" {
+  return executor === "hosted";
 }
 
 export function warnUnsigned(executor?: string): void {
-  // stderr, same as NOT SIGNED. `env create --json` and `env bind --json`
-  // print the object on stdout, and a line in front of it is not JSON.
-  err(
-    skipsSignatureCheck(executor)
-      ? `unsigned. A ${executor} executor does not check signatures.`
-      : UNSIGNED_WARNING,
-  );
+  if (skipsSignatureCheck(executor)) return;
+
+  // stderr, so `env create --json` and `env bind --json` stay JSON on stdout.
+  err(executor === "remote" ? REMOTE_UNSIGNED : UNSIGNED_WARNING);
 }
 
 /** Where `puppi keys create` writes the seed when `--out` is not given. */

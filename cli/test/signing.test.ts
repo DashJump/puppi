@@ -33,13 +33,15 @@ function run(...argv: string[]): Promise<number> {
   return main([...argv, "--engine-url", "http://engine:4000", "--env", "prod", "--dir", dir]);
 }
 
-/** The stderr line an unsigned write prints for this environment's executor. */
-function unsignedLine(executor: string): string {
-  if (executor === "local" || executor === "hosted") {
-    return `unsigned. A ${executor} executor does not check signatures.`;
-  }
+/** The one sentence an unsigned remote write prints. Hosted prints nothing. */
+const REMOTE_UNSIGNED =
+  "A remote worker with trusted keys will refuse this unsigned row until you set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 
-  return "NOT SIGNED";
+function expectNoSigningLine(): void {
+  expect(stderr).not.toContain("unsigned");
+  expect(stderr).not.toContain("NOT SIGNED");
+  expect(stderr).not.toContain("signing");
+  expect(stderr).not.toContain("refuse");
 }
 
 beforeEach(async () => {
@@ -195,29 +197,14 @@ describe("signed writes", () => {
     expect(bound.signature.length).toBeGreaterThan(0);
   });
 
-  it("does not exit 2 when a local environment is signed by a different key", async () => {
+  it("rejects --executor local before it reads the environment", async () => {
     await useKey();
-    engine({
-      "GET /environments": [
-        {
-          id: "e1",
-          name: "prod",
-          kind: "persistent",
-          storage_prefix: "prod",
-          strict: false,
-          schedules_paused: false,
-          executor: "local",
-          signature: "sig",
-          signing_key: "ed25519:other",
-          active_deployment_id: null,
-          inserted_at: "2026-10-16T00:00:00Z",
-        },
-      ],
-    });
+    engine({ "GET /environments": [] });
 
-    expect(await run("env", "create", "prod", "--executor", "local")).toBe(0);
+    expect(await run("env", "create", "prod", "--executor", "local")).toBe(2);
+    expect(stderr).toContain("--executor hosted|remote");
     expect(stderr).not.toContain("not signed by");
-    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual(["GET /environments"]);
+    expect(calls).toEqual([]);
   });
 
   it("exits 2 when an existing environment is not signed by this key", async () => {
@@ -306,8 +293,7 @@ describe("signed writes", () => {
 
     expect(await run("env", "create", "prod", "--executor", "hosted")).toBe(0);
     expect(stderr).not.toContain("not signed by");
-    expect(stderr).toContain("unsigned. A hosted executor does not check signatures.");
-    expect(stderr).not.toContain("NOT SIGNED");
+    expectNoSigningLine();
     expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
       "GET /environments",
       "POST /environments/prod/placement",
@@ -336,6 +322,7 @@ describe("signed writes", () => {
 
     expect(await run("env", "create", "prod", "--executor", "remote")).toBe(0);
     expect(stderr).not.toContain("NOT SIGNED");
+    expect(stderr).not.toContain(REMOTE_UNSIGNED);
     expect(calls.every((call) => call.method === "GET")).toBe(true);
   });
 
@@ -358,7 +345,8 @@ describe("signed writes", () => {
     });
 
     expect(await run("env", "create", "prod", "--executor", "remote")).toBe(0);
-    expect(stderr).toContain("NOT SIGNED");
+    expect(stderr).toContain(REMOTE_UNSIGNED);
+    expect(stderr).not.toContain("NOT SIGNED");
     expect(calls.find((call) => call.method === "POST")?.body).not.toHaveProperty("signature");
   });
 
@@ -377,7 +365,7 @@ describe("signed writes", () => {
         storage_prefix: "prod",
         strict: false,
         schedules_paused: false,
-        executor: "local",
+        executor: "hosted",
         signature: "stored",
         signing_key: envKey.id,
         active_deployment_id: null,
@@ -385,26 +373,17 @@ describe("signed writes", () => {
       },
     });
 
-    expect(
-      await run(
-        "env",
-        "create",
-        "prod",
-        "--executor",
-        "local",
-        "--signing-key",
-        join(dir, "file-key"),
-      ),
-    ).toBe(0);
+    expect(await run("env", "create", "prod", "--signing-key", join(dir, "file-key"))).toBe(0);
     const created = calls.find((call) => call.method === "POST")?.body as
-      | { signing_key?: string }
+      | { signing_key?: string; executor?: string }
       | undefined;
 
     expect(created?.signing_key).toBe(envKey.id);
+    expect(created).toMatchObject({ executor: "hosted" });
 
     delete process.env["PUPPI_SIGNING_KEY"];
     process.env["PUPPI_SIGNING_KEY_FILE"] = join(dir, "missing-key");
-    expect(await run("env", "create", "prod", "--executor", "local")).toBe(2);
+    expect(await run("env", "create", "prod")).toBe(2);
     expect(stderr).toContain("no signing key");
   });
 
@@ -570,7 +549,11 @@ describe("signed writes", () => {
       updated_at: "2026-10-16T00:00:00Z",
     };
 
-    for (const executor of ["local", "remote", "hosted"]) {
+    expect(await run("env", "create", "prod", "--executor", "local", "--json")).toBe(2);
+    expect(stderr).toContain("--executor hosted|remote");
+    expect(calls).toEqual([]);
+
+    for (const executor of ["remote", "hosted"]) {
       calls = [];
       stdout = "";
       stderr = "";
@@ -582,7 +565,9 @@ describe("signed writes", () => {
       expect(await run("env", "create", "prod", "--executor", executor, "--json")).toBe(0);
       expect(JSON.parse(stdout)).toMatchObject({ name: "prod", executor });
       expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({ executor });
-      expect(stderr).toContain(unsignedLine(executor));
+
+      if (executor === "hosted") expectNoSigningLine();
+      else expect(stderr).toContain(REMOTE_UNSIGNED);
 
       calls = [];
       stdout = "";
@@ -595,7 +580,9 @@ describe("signed writes", () => {
 
       expect(await run("env", "bind", "warehouse", "--json", "--config", "{}")).toBe(0);
       expect(JSON.parse(stdout)).toMatchObject({ name: "warehouse" });
-      expect(stderr).toContain(unsignedLine(executor));
+
+      if (executor === "hosted") expectNoSigningLine();
+      else expect(stderr).toContain(REMOTE_UNSIGNED);
     }
   });
 
@@ -710,22 +697,21 @@ describe("unsigned deploy", () => {
     expect(body).not.toHaveProperty("signing_key");
   });
 
-  it("downgrades NOT SIGNED on deploy when the executor is local", async () => {
+  it("warns on deploy when the stored executor is not hosted", async () => {
     stubDeploy({ executor: "local" });
 
     expect(await deploy()).toBe(0);
-    expect(stderr).not.toContain("NOT SIGNED");
-    expect(stderr).toContain("unsigned. A local executor does not check signatures.");
-    expect(stdout).not.toContain("unsigned. A local executor does not check signatures.");
+    expect(stderr).toContain("NOT SIGNED");
+    expect(stderr).not.toContain("does not check signatures");
   });
 
-  it("downgrades NOT SIGNED on deploy when the executor is hosted", async () => {
+  it("prints nothing about signing on deploy when the executor is hosted", async () => {
     stubDeploy({ executor: "hosted" });
 
     expect(await deploy()).toBe(0);
-    expect(stderr).not.toContain("NOT SIGNED");
-    expect(stderr).toContain("unsigned. A hosted executor does not check signatures.");
-    expect(stdout).not.toContain("unsigned. A hosted executor does not check signatures.");
+    expectNoSigningLine();
+    expect(stdout).not.toContain("does not check signatures");
+    expect(stdout).not.toContain("NOT SIGNED");
   });
 
   it("prints NOT SIGNED when the stored placement is one this CLI does not know", async () => {

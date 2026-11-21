@@ -953,34 +953,63 @@ describe("puppi rollback", () => {
 });
 
 describe("puppi env", () => {
-  it("refuses to create an environment without a mode", async () => {
-    engine({ "GET /environments": [] });
+  it("creates an environment as hosted when --executor is omitted", async () => {
+    engine({
+      "GET /environments": [],
+      "POST /environments": {
+        id: "e1",
+        name: "prod",
+        kind: "persistent",
+        storage_prefix: "prod",
+        strict: false,
+        schedules_paused: false,
+        executor: "hosted",
+        active_deployment_id: null,
+        inserted_at: "2026-09-18T09:00:00Z",
+      },
+    });
 
-    expect(await run("env", "create", "prod")).toBe(2);
-    expect(stderr).toContain("--executor local|remote|hosted");
-    expect(stderr).toContain("puppi env create prod --executor hosted");
+    expect(await run("env", "create", "prod")).toBe(0);
+    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      "GET /environments",
+      "POST /environments",
+    ]);
+    expect(calls[1]?.body).toMatchObject({ name: "prod", executor: "hosted" });
+    expect(stdout).toContain("environment prod created");
+    expect(stderr).not.toContain("unsigned");
+    expect(stderr).not.toContain("NOT SIGNED");
+    expect(stderr).not.toContain("signing");
   });
 
-  it("reports a missing name and a missing executor together", async () => {
+  it("reports a missing name without asking for an executor", async () => {
     engine({});
 
     expect(await main(["env", "create", "--engine-url", "http://engine:4000"])).toBe(2);
-    expect(stderr).toContain("needs a name and --executor local|remote|hosted");
-    expect(stderr).toContain("puppi env create prod --executor hosted");
+    expect(stderr).toContain("needs a name");
+    expect(stderr).toContain("puppi env create prod");
+    expect(stderr).not.toContain("--executor");
     expect(calls).toEqual([]);
   });
 
-  it("refuses an executor that is not a placement, with no default", async () => {
+  it("refuses an executor that is not hosted or remote, including local", async () => {
     engine({ "GET /environments": [] });
 
     expect(await run("env", "create", "prod", "--executor", "banana")).toBe(2);
-    expect(stderr).toContain("--executor local|remote|hosted");
-    expect(stderr).toContain("puppi env create prod --executor hosted");
+    expect(stderr).toContain("--executor hosted|remote");
+    expect(stderr).toContain("puppi env create prod");
+    expect(stderr).not.toContain("puppi env create prod --executor");
+    expect(calls).toEqual([]);
+
+    stderr = "";
+    expect(await run("env", "create", "prod", "--executor", "local")).toBe(2);
+    expect(stderr).toContain("--executor hosted|remote");
     expect(calls).toEqual([]);
 
     stdout = "";
     expect(await main(["env", "--help"])).toBe(0);
-    expect(stdout).toContain("--executor local|remote|hosted");
+    expect(stdout).toContain("[--executor hosted|remote]");
+    expect(stdout).toContain("hosted when omitted");
+    expect(stdout).not.toContain("local|remote|hosted");
   });
 
   it("places the tenant and lists the environments it restamped", async () => {
@@ -1012,22 +1041,28 @@ describe("puppi env", () => {
     expect(stdout).toContain("hosted: prod");
   });
 
-  it("refuses a place mode that is not local, remote, or hosted", async () => {
+  it("refuses a place mode that is not hosted or remote, including local", async () => {
     engine({});
 
     expect(await main(["place", "--engine-url", "http://engine:4000"])).toBe(2);
-    expect(stderr).toContain("needs local, remote, hosted");
+    expect(stderr).toContain("needs hosted, remote");
     expect(stderr).toContain("puppi place hosted");
     expect(calls).toEqual([]);
 
     stderr = "";
+    expect(await main(["place", "local", "--engine-url", "http://engine:4000"])).toBe(2);
+    expect(stderr).toContain("needs hosted, remote");
+    expect(calls).toEqual([]);
+
+    stderr = "";
     expect(await main(["place", "banana", "--engine-url", "http://engine:4000"])).toBe(2);
-    expect(stderr).toContain("needs local, remote, hosted");
+    expect(stderr).toContain("needs hosted, remote");
     expect(calls).toEqual([]);
 
     stdout = "";
     expect(await main(["place", "--help"])).toBe(0);
-    expect(stdout).toContain("puppi place <local|remote|hosted>");
+    expect(stdout).toContain("puppi place <hosted|remote>");
+    expect(stdout).not.toContain("local|remote|hosted");
     expect(calls).toEqual([]);
   });
 

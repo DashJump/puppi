@@ -219,7 +219,8 @@ export async function ensureDefaultEnvironment(
 
 /**
  * Idempotent. When `executor` is a placement and the stored one differs,
- * the environment is moved. A missing name is created with that placement.
+ * the environment is moved. A missing name is created as hosted when no
+ * placement was given.
  */
 async function ensureEnvironment(
   api: Api,
@@ -246,10 +247,11 @@ async function ensureEnvironment(
     return { environment: existing, existed: true, updated: false };
   }
 
-  if (!isPlacement(options.executor)) {
+  const executor = options.executor ?? "hosted";
+
+  if (!isPlacement(executor)) {
     throw new UsageError(
-      `puppi env create ${name} needs ${EXECUTOR_USAGE}.\n` +
-        `  puppi env create ${name} --executor hosted`,
+      `puppi env create ${name} needs ${EXECUTOR_USAGE}.\n  puppi env create ${name}`,
     );
   }
 
@@ -260,7 +262,7 @@ async function ensureEnvironment(
     updated: false,
     environment: await api.post<Environment>("/environments", {
       name,
-      executor: options.executor,
+      executor,
       storage_prefix: storagePrefix,
       ...(options.kind ? { kind: options.kind } : {}),
       ...(options.signingKey
@@ -274,27 +276,26 @@ async function ensureEnvironment(
 }
 
 /**
- * A name and `--executor` are both required for a new environment, and
- * `--executor` has no default. They are reported together, with one command
- * that would work. An existing name may omit `--executor`; that is checked
- * after the lookup. A value that is not a placement is wrong either way.
+ * A name is required. `--executor` defaults to hosted, so an omitted flag
+ * is not an error. A value that is not hosted or remote is wrong either
+ * way, and the example is a command that would work. An existing name may
+ * omit `--executor` and keeps its executor. That is checked after the lookup.
  */
 function missingCreate(name: string | undefined, executor: string | undefined): string | undefined {
-  const missing: string[] = [];
-  const ok = isPlacement(executor);
+  const example = name ?? "prod";
+  const badExecutor = executor !== undefined && !isPlacement(executor);
 
-  if (!name) missing.push("a name");
-  if (!ok && (executor !== undefined || !name)) missing.push(EXECUTOR_USAGE);
+  if (!name && badExecutor) {
+    return `puppi env create needs a name and ${EXECUTOR_USAGE}.\n  puppi env create ${example}`;
+  }
 
-  if (missing.length === 0) return undefined;
+  if (!name) return `puppi env create needs a name.\n  puppi env create ${example}`;
 
-  const exampleName = name ?? "prod";
-  const exampleExecutor = ok ? executor : "hosted";
+  if (badExecutor) {
+    return `puppi env create ${name} needs ${EXECUTOR_USAGE}.\n  puppi env create ${name}`;
+  }
 
-  return (
-    `puppi env create needs ${missing.join(" and ")}.\n` +
-    `  puppi env create ${exampleName} --executor ${exampleExecutor}`
-  );
+  return undefined;
 }
 
 async function create(
@@ -311,8 +312,8 @@ async function create(
   const signingKey = await loadSigningKey(dir, flag(args, "signing-key"));
 
   // Moving onto an executor that checks signatures does not re-sign an
-  // existing row. Compare the key before that write. Local and hosted do
-  // not check, so they do not come here.
+  // existing row. Compare the key before that write. Hosted does not
+  // check, so it does not come here.
   if (executor !== undefined && !skipsSignatureCheck(executor) && signingKey) {
     const stored = (await api.get<Environment[]>("/environments")).find((env) => env.name === name);
 
@@ -721,7 +722,8 @@ export const env: Command<EnvResult> = {
     helpBlock(190, [
       "  puppi env list                       every environment",
       "  puppi env show                       one environment's bindings and secrets",
-      `  puppi env create <name>              ${EXECUTOR_USAGE}`,
+      `  puppi env create <name>              [${EXECUTOR_USAGE}]`,
+      "                                       hosted when omitted",
       "                                       [--storage-prefix <p>] [--kind preview]",
     ]),
     helpBlock(210, [

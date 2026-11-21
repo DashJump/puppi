@@ -7,11 +7,12 @@
  */
 
 /**
- * Placements the server accepts today. Setters check a value against this
- * list. Readers do not: a placement added later must not require a change
- * in a command that only prints or forwards the stored executor.
+ * Placements this CLI sets. Hosted workers are the default. Remote is the
+ * opt-in for a pool the customer runs. Setters check a value against this
+ * list. Readers do not: a stored executor this list does not name, including
+ * one set by an engine mix task, is printed as the server sent it.
  */
-export const PLACEMENTS = ["local", "remote", "hosted"] as const;
+export const PLACEMENTS = ["hosted", "remote"] as const;
 
 export function isPlacement(value: string | undefined): value is (typeof PLACEMENTS)[number] {
   return (PLACEMENTS as readonly string[]).includes(value ?? "");
