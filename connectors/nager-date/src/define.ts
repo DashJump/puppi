@@ -8,5 +8,6 @@ export default defineConnector({
   auth: { scheme: "none" },
   apiVersions: ["unversioned"],
   defaultApiVersion: "unversioned",
-  defaultBaseUrl: "https://date.nager.at/api/v3",
+  // Every operation path in the spec already starts with `/api/v4`.
+  defaultBaseUrl: "https://nagerholidays.com",
 });

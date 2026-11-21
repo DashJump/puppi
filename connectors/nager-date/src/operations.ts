@@ -6,38 +6,26 @@ import type { operations as spec } from "./openapi.js";
 
 export type Api = {
   responses: {
-    availableCountries: BodyOf<spec["availableCountries"]>;
-    publicHolidays: BodyOf<spec["publicHolidays"]>;
-    nextWorldwide: BodyOf<spec["nextWorldwide"]>;
-    next: BodyOf<spec["next"]>;
-    longWeekends: BodyOf<spec["longWeekends"]>;
+    "/api/v4/Countries/Available": BodyOf<spec["/api/v4/Countries/Available"]>;
+    "/api/v4/Holidays/{countryCode}/{year}": BodyOf<spec["/api/v4/Holidays/{countryCode}/{year}"]>;
+    "/api/v4/Holidays/{countryCode}/Next": BodyOf<spec["/api/v4/Holidays/{countryCode}/Next"]>;
   };
 };
 
 export const operations: Record<keyof Api["responses"], Operation> = {
-  availableCountries: {
+  "/api/v4/Countries/Available": {
     method: "get",
-    path: "/AvailableCountries",
+    path: "/api/v4/Countries/Available",
     query: [],
   },
-  publicHolidays: {
+  "/api/v4/Holidays/{countryCode}/{year}": {
     method: "get",
-    path: "/PublicHolidays/{year}/{countryCode}",
+    path: "/api/v4/Holidays/{countryCode}/{year}",
     query: [],
   },
-  nextWorldwide: {
+  "/api/v4/Holidays/{countryCode}/Next": {
     method: "get",
-    path: "/NextPublicHolidaysWorldwide",
-    query: [],
-  },
-  next: {
-    method: "get",
-    path: "/NextPublicHolidays/{countryCode}",
-    query: [],
-  },
-  longWeekends: {
-    method: "get",
-    path: "/LongWeekend/{year}/{countryCode}",
+    path: "/api/v4/Holidays/{countryCode}/Next",
     query: [],
   },
 };

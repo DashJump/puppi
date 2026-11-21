@@ -4,14 +4,38 @@
  */
 
 export type paths = {
-  "/AvailableCountries": {
+  "/api/v4/Countries/Available": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["availableCountries"];
+    /**
+     * Retrieve the complete list of all supported countries
+     * @description This endpoint returns all countries for which public-holiday data is available.
+     *     Each entry includes the country's name and ISO code.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Successfully returns the list of supported countries. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CountryV4Dto"][];
+          };
+        };
+      };
+    };
     put?: never;
     post?: never;
     delete?: never;
@@ -20,14 +44,63 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
-  "/PublicHolidays/{year}/{countryCode}": {
+  "/api/v4/Holidays/{countryCode}/{year}": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["publicHolidays"];
+    /**
+     * Retrieve the list of all public holidays for the specified year and country
+     * @description This endpoint returns all officially recognized public holidays for the given country
+     *     and year. Each holiday entry includes the local and English holiday names, information
+     *     about whether the holiday applies nationally or only in specific subdivisions, and the
+     *     associated holiday type classifications.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description A valid `ISO 3166-1 alpha-2` country code. */
+          countryCode: string;
+          /** @description The target year for which public holidays should be retrieved. */
+          year: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Successfully retrieved the list of public holidays. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PublicHolidayV4Dto"][];
+          };
+        };
+        /** @description The request was invalid. See the validation details for more information. */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description The provided country code is invalid or not recognized. */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
     put?: never;
     post?: never;
     delete?: never;
@@ -36,46 +109,58 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
-  "/NextPublicHolidaysWorldwide": {
+  "/api/v4/Holidays/{countryCode}/Next": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["nextWorldwide"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/NextPublicHolidays/{countryCode}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    /**
+     * Retrieve all upcoming public holidays occurring within the next 365 days for a given country
+     * @description The list includes only future holidays relative to the current date and is useful for forecasting, event planning, and applications that provide forward-looking holiday insights.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description A valid `ISO 3166-1 alpha-2` country code. */
+          countryCode: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description A list of upcoming public holidays for the next 365 days. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PublicHolidayV4Dto"][];
+          };
+        };
+        /** @description No upcoming holidays were found for the specified country. */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": unknown;
+          };
+        };
+        /** @description The provided country code is invalid or not recognized. */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
     };
-    get: operations["next"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/LongWeekend/{year}/{countryCode}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: operations["longWeekends"];
     put?: never;
     post?: never;
     delete?: never;
@@ -88,29 +173,43 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
-    country: {
+    /** @description Represents a country supported by the Nager.Date API. */
+    CountryV4Dto: {
+      /** @description The ISO 3166-1 alpha-2 country code (e.g., "US", "DE"). */
       countryCode: string;
+      /** @description The common name of the country. */
       name: string;
     };
-    holiday: {
-      /** @description ISO date. */
+    /**
+     * Format: string
+     * @enum {string}
+     */
+    HolidayTypes: "Public" | "Bank" | "School" | "Authorities" | "Optional" | "Observance";
+    ProblemDetails: {
+      type?: null | string;
+      title?: null | string;
+      /** Format: int32 */
+      status?: null | number;
+      detail?: null | string;
+      instance?: null | string;
+    };
+    /** @description Represents a public holiday. */
+    PublicHolidayV4Dto: {
+      /**
+       * Format: date
+       * @description The date of the holiday.
+       */
       date: string;
-      localName: string;
+      /** @description English name of the holiday. */
       name: string;
+      /** @description ISO 3166-1 alpha-2 country code. */
       countryCode: string;
-      /** @description Same date every year. */
-      fixed: boolean;
-      /** @description Nationwide, as opposed to some counties only. */
-      global: boolean;
-      counties: string[] | null;
-      launchYear: number | null;
-      types: string[];
-    };
-    longWeekend: {
-      startDate: string;
-      endDate: string;
-      dayCount: number;
-      needBridgeDay: boolean;
+      /** @description Indicates if this holiday applies to the entire country. */
+      nationalHoliday?: boolean;
+      /** @description ISO-3166-2 codes of the subdivisions where this holiday applies */
+      subdivisionCodes?: null | string[];
+      /** @description List of holiday types this holiday is classified under. */
+      holidayTypes: components["schemas"]["HolidayTypes"][];
     };
   };
   responses: never;
@@ -119,117 +218,9 @@ export type components = {
   headers: never;
   pathItems: never;
 };
-export type SchemaCountry = components["schemas"]["country"];
-export type SchemaHoliday = components["schemas"]["holiday"];
-export type SchemaLongWeekend = components["schemas"]["longWeekend"];
+export type SchemaCountryV4Dto = components["schemas"]["CountryV4Dto"];
+export type SchemaHolidayTypes = components["schemas"]["HolidayTypes"];
+export type SchemaProblemDetails = components["schemas"]["ProblemDetails"];
+export type SchemaPublicHolidayV4Dto = components["schemas"]["PublicHolidayV4Dto"];
 export type $defs = Record<string, never>;
-export interface operations {
-  availableCountries: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Covered countries. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["country"][];
-        };
-      };
-    };
-  };
-  publicHolidays: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        countryCode: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Public holidays that year. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["holiday"][];
-        };
-      };
-    };
-  };
-  nextWorldwide: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Next holidays worldwide. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["holiday"][];
-        };
-      };
-    };
-  };
-  next: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        countryCode: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Next holidays for one country. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["holiday"][];
-        };
-      };
-    };
-  };
-  longWeekends: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        year: number;
-        countryCode: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Long weekends. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["longWeekend"][];
-        };
-      };
-    };
-  };
-}
+export type operations = Record<string, never>;
