@@ -29,3 +29,7 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+## Docs and comments
+
+Check `docs/WRITING.md` before changing docs, READMEs, or code comments (JSDoc, `//`).
