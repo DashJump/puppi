@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-podcast-index",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Source connector for the Podcast Index API: signed API key, show lookup, episode pages.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

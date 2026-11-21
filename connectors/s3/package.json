@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-s3",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parquet tables and files on S3-compatible storage (AWS, MinIO, R2), signed with SigV4 over fetch.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

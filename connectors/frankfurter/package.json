@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-frankfurter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Frankfurter (ECB reference exchange rates).",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

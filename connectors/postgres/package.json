@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-postgres",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Storage adapter for Postgres. One materialization is one table.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

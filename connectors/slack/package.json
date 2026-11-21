@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-slack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Slack conversations: bearer bot token, cursor in response_metadata.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

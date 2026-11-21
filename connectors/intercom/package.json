@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-intercom",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the Intercom REST API: bearer access token, Intercom-Version header, list reads.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

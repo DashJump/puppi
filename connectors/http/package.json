@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-http",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Generic JSON-over-HTTP connection: base_url, headers, and an optional bearer token or API key.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

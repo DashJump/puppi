@@ -1,6 +1,6 @@
 {
   "name": "@puppi/executor-js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The process the CLI spawns for puppi try and puppi worker start.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

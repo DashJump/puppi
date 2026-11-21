@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-hubspot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the HubSpot CRM contacts API: bearer auth, cursor pages.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

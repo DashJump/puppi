@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-pokeapi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for PokeAPI v2.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {
