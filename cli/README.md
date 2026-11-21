@@ -25,14 +25,14 @@ These need the key from `puppi login`. With no `--env` and no `PUPPI_ENV`, `depl
 
 ```bash
 puppi login
-puppi env create prod --executor hosted
+puppi env create prod
 export PUPPI_ENV=prod
 puppi deploy --env prod
 puppi run --wait --env prod
 puppi status --env prod
 ```
 
-Pass `--executor hosted` for Puppi-managed execution. Pass `--executor remote` for a worker pool you run. One word. The public API refuses `local` with `403` `local_not_allowed`.
+`puppi env create` creates a hosted environment. Pass `--executor remote` for a worker pool you run.
 
 `puppi doctor` checks that the engine answers, the token is accepted, and this project's SDK matches the engine.
 
@@ -72,12 +72,12 @@ puppi deploy --env prod --allow-contract-change core/customer
 
 ```bash
 puppi env list
-puppi env create prod --executor hosted
+puppi env create prod
 puppi env show --env prod
 puppi place hosted
 ```
 
-`puppi place hosted` sets hosted on every environment. `puppi place remote` sets remote on every environment. `puppi place local` is refused with `403` `local_not_allowed`.
+`puppi place hosted` sets hosted on every environment. `puppi place remote` sets remote on every environment.
 
 ### Bind a declared connection
 
