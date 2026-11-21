@@ -19,20 +19,17 @@ function body(schema: object, overrides: Record<string, unknown> = {}): Record<s
   return { ...(sampled as Record<string, unknown>), ...overrides };
 }
 
-const holiday = body(spec.components.schemas["holiday"]!, {
-  date: "2026-10-03",
-  localName: "Tag der Deutschen Einheit",
-  name: "German Unity Day",
+const holiday = body(spec.components.schemas["PublicHolidayV4Dto"]!, {
+  date: "2026-01-06",
+  name: "Epiphany",
   countryCode: "DE",
-  fixed: true,
-  global: true,
-  counties: null,
-  launchYear: 1990,
-  types: ["Public"],
+  nationalHoliday: false,
+  subdivisionCodes: ["DE-BW", "DE-BY", "DE-ST"],
+  holidayTypes: ["Public"],
 }) as Holiday;
 
 function country(overrides: Record<string, unknown> = {}) {
-  return body(spec.components.schemas["country"]!, overrides);
+  return body(spec.components.schemas["CountryV4Dto"]!, overrides);
 }
 
 function fake(routes: Record<string, unknown>) {
@@ -59,18 +56,25 @@ describe("nager-date client", () => {
         connector,
         operations,
         root: new URL("..", import.meta.url),
-        config: { base_url: "https://date.test/api/v3" },
+        config: { base_url: "https://date.test" },
       }),
     );
   });
 
   it("fetches a year's holidays for a country", async () => {
-    const { urls, client } = fake({ "/api/v3/PublicHolidays/2026/DE": [holiday] });
+    const { urls, client } = fake({ "/api/v4/Holidays/DE/2026": [holiday] });
 
     const holidays = await client.publicHolidays(2026, "DE");
 
-    expect(holidays?.[0]?.name).toBe("German Unity Day");
-    expect(urls).toEqual(["/api/v3/PublicHolidays/2026/DE"]);
+    expect(holidays?.[0]).toMatchObject({
+      date: "2026-01-06",
+      name: "Epiphany",
+      countryCode: "DE",
+      nationalHoliday: false,
+      subdivisionCodes: ["DE-BW", "DE-BY", "DE-ST"],
+      holidayTypes: ["Public"],
+    });
+    expect(urls).toEqual(["/api/v4/Holidays/DE/2026"]);
   });
 
   it("answers null, not an error, for a country the service does not cover", async () => {
@@ -83,7 +87,7 @@ describe("nager-date client", () => {
   it("still fails on anything but a 404", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
     const { client } = fake({
-      "/api/v3/PublicHolidays/2026/DE": () =>
+      "/api/v4/Holidays/DE/2026": () =>
         new Response("", { status: 503, statusText: "Service Unavailable" }),
     });
     const caught: unknown[] = [];
@@ -100,13 +104,22 @@ describe("nager-date client", () => {
     vi.useRealTimers();
   });
 
-  it("lists covered countries and the next holidays worldwide", async () => {
-    const { client } = fake({
-      "/api/v3/AvailableCountries": [country({ countryCode: "DE", name: "Germany" })],
-      "/api/v3/NextPublicHolidaysWorldwide": [holiday],
+  it("lists covered countries and the next holidays for one country", async () => {
+    const { urls, client } = fake({
+      "/api/v4/Countries/Available": [country({ countryCode: "DE", name: "Germany" })],
+      "/api/v4/Holidays/DE/Next": [holiday],
     });
 
     expect(await client.availableCountries()).toEqual([{ countryCode: "DE", name: "Germany" }]);
-    expect((await client.nextWorldwide())[0]?.countryCode).toBe("DE");
+    expect((await client.next("DE"))?.[0]?.countryCode).toBe("DE");
+    expect(urls).toEqual(["/api/v4/Countries/Available", "/api/v4/Holidays/DE/Next"]);
+  });
+
+  it("treats a 204 from next as no upcoming holidays", async () => {
+    const { client } = fake({
+      "/api/v4/Holidays/DE/Next": () => new Response(null, { status: 204 }),
+    });
+
+    expect(await client.next("DE")).toEqual([]);
   });
 });

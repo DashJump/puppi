@@ -1,94 +1,146 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.1",
   "info": {
-    "title": "Nager.Date",
-    "version": "3.0.0",
-    "description": "Public holidays at https://date.nager.at. A country the service does not cover is a 404."
+    "title": "Community - API V4",
+    "description": "The Nager.Date Community API is a public service that provides reliable information about public holidays for countries around the world. It allows developers to query national holiday dates, check whether a specific day is a public holiday and list upcoming holidays.\r\n\r\n\r\n\r\nBy using the API, you agree to the <a href=\"https://date.nager.at/Legal/TermsOfService\">Terms of Service.</a>",
+    "termsOfService": "https://date.nager.at/Legal/TermsOfService",
+    "contact": {
+      "name": "Nager Software Solutions",
+      "email": "hello@nager.software"
+    },
+    "version": "v4"
   },
-  "servers": [{ "url": "https://date.nager.at/api/v3" }],
   "paths": {
-    "/AvailableCountries": {
+    "/api/v4/Countries/Available": {
       "get": {
-        "operationId": "availableCountries",
+        "tags": ["Countries"],
+        "summary": "Retrieve the complete list of all supported countries",
+        "description": "This endpoint returns all countries for which public-holiday data is available.\nEach entry includes the country's name and ISO code.",
         "responses": {
           "200": {
-            "description": "Covered countries.",
-            "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/country" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/PublicHolidays/{year}/{countryCode}": {
-      "get": {
-        "operationId": "publicHolidays",
-        "parameters": [
-          { "name": "year", "in": "path", "required": true, "schema": { "type": "integer" } },
-          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Public holidays that year.",
-            "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/NextPublicHolidaysWorldwide": {
-      "get": {
-        "operationId": "nextWorldwide",
-        "responses": {
-          "200": {
-            "description": "Next holidays worldwide.",
-            "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/NextPublicHolidays/{countryCode}": {
-      "get": {
-        "operationId": "next",
-        "parameters": [
-          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Next holidays for one country.",
-            "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/holiday" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/LongWeekend/{year}/{countryCode}": {
-      "get": {
-        "operationId": "longWeekends",
-        "parameters": [
-          { "name": "year", "in": "path", "required": true, "schema": { "type": "integer" } },
-          { "name": "countryCode", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Long weekends.",
+            "description": "Successfully returns the list of supported countries.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/longWeekend" }
+                  "items": {
+                    "$ref": "#/components/schemas/CountryV4Dto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/Holidays/{countryCode}/{year}": {
+      "get": {
+        "tags": ["Holidays"],
+        "summary": "Retrieve the list of all public holidays for the specified year and country",
+        "description": "This endpoint returns all officially recognized public holidays for the given country\nand year. Each holiday entry includes the local and English holiday names, information\nabout whether the holiday applies nationally or only in specific subdivisions, and the\nassociated holiday type classifications.",
+        "parameters": [
+          {
+            "name": "countryCode",
+            "in": "path",
+            "description": "A valid `ISO 3166-1 alpha-2` country code.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "us"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "description": "The target year for which public holidays should be retrieved.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 2026
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved the list of public holidays.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicHolidayV4Dto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was invalid. See the validation details for more information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The provided country code is invalid or not recognized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/Holidays/{countryCode}/Next": {
+      "get": {
+        "tags": ["Holidays"],
+        "summary": "Retrieve all upcoming public holidays occurring within the next 365 days for a given country",
+        "description": "The list includes only future holidays relative to the current date and is useful for forecasting, event planning, and applications that provide forward-looking holiday insights.",
+        "parameters": [
+          {
+            "name": "countryCode",
+            "in": "path",
+            "description": "A valid `ISO 3166-1 alpha-2` country code.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "us"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of upcoming public holidays for the next 365 days.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicHolidayV4Dto"
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No upcoming holidays were found for the specified country.",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "The provided country code is invalid or not recognized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -99,49 +151,95 @@
   },
   "components": {
     "schemas": {
-      "country": {
-        "type": "object",
+      "CountryV4Dto": {
         "required": ["countryCode", "name"],
-        "properties": { "countryCode": { "type": "string" }, "name": { "type": "string" } }
-      },
-      "holiday": {
         "type": "object",
-        "required": [
-          "date",
-          "localName",
-          "name",
-          "countryCode",
-          "fixed",
-          "global",
-          "counties",
-          "launchYear",
-          "types"
-        ],
         "properties": {
-          "date": { "type": "string", "description": "ISO date." },
-          "localName": { "type": "string" },
-          "name": { "type": "string" },
-          "countryCode": { "type": "string" },
-          "fixed": { "type": "boolean", "description": "Same date every year." },
-          "global": {
-            "type": "boolean",
-            "description": "Nationwide, as opposed to some counties only."
+          "countryCode": {
+            "type": "string",
+            "description": "The ISO 3166-1 alpha-2 country code (e.g., \"US\", \"DE\")."
           },
-          "counties": { "type": "array", "items": { "type": "string" }, "nullable": true },
-          "launchYear": { "type": "integer", "nullable": true },
-          "types": { "type": "array", "items": { "type": "string" } }
+          "name": {
+            "type": "string",
+            "description": "The common name of the country."
+          }
+        },
+        "description": "Represents a country supported by the Nager.Date API."
+      },
+      "HolidayTypes": {
+        "enum": ["Public", "Bank", "School", "Authorities", "Optional", "Observance"],
+        "type": "string",
+        "format": "string"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": ["null", "string"]
+          },
+          "title": {
+            "type": ["null", "string"]
+          },
+          "status": {
+            "type": ["null", "integer"],
+            "format": "int32"
+          },
+          "detail": {
+            "type": ["null", "string"]
+          },
+          "instance": {
+            "type": ["null", "string"]
+          }
         }
       },
-      "longWeekend": {
+      "PublicHolidayV4Dto": {
+        "required": ["date", "name", "countryCode", "holidayTypes"],
         "type": "object",
-        "required": ["startDate", "endDate", "dayCount", "needBridgeDay"],
         "properties": {
-          "startDate": { "type": "string" },
-          "endDate": { "type": "string" },
-          "dayCount": { "type": "integer" },
-          "needBridgeDay": { "type": "boolean" }
-        }
+          "date": {
+            "type": "string",
+            "description": "The date of the holiday.",
+            "format": "date"
+          },
+          "name": {
+            "type": "string",
+            "description": "English name of the holiday."
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-2 country code."
+          },
+          "nationalHoliday": {
+            "type": "boolean",
+            "description": "Indicates if this holiday applies to the entire country."
+          },
+          "subdivisionCodes": {
+            "type": ["null", "array"],
+            "items": {
+              "type": "string"
+            },
+            "description": "ISO-3166-2 codes of the subdivisions where this holiday applies"
+          },
+          "holidayTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HolidayTypes"
+            },
+            "description": "List of holiday types this holiday is classified under."
+          }
+        },
+        "description": "Represents a public holiday."
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Countries",
+      "description": "Provides access to detailed country information and the list of all countries supported by the API. This includes general metadata such as country names, codes, regions, and related details."
+    },
+    {
+      "name": "Holidays",
+      "description": "Includes functionality for retrieving public-holiday data, checking whether a specific day is a public holiday, and listing upcoming holidays."
+    }
+  ]
 }
