@@ -1,5 +1,11 @@
 # @puppi/cli
 
+## 0.2.2
+
+### Patch Changes
+
+- b2f2679: The project `puppi init` writes no longer calls `ctx.query()`, so its first run succeeds on filesystem storage.
+
 ## 0.2.1
 
 ### Patch Changes

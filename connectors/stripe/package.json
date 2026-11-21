@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-stripe",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Source connector for the Stripe Customers API: bearer auth, pinned API version, cursor pages.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {
