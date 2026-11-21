@@ -5,7 +5,7 @@
 ## Install and preview
 
 ```bash
-npm install -g @puppi/cli@0.2.1
+npm install -g @puppi/cli@0.2.2
 puppi init my-pipeline
 cd my-pipeline
 npm install
