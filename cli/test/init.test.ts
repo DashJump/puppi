@@ -123,11 +123,9 @@ describe("puppi init", () => {
       "core/person",
       "example/people",
     ]);
-    // The dependency comes from the compile pass over the producer, not from
-    // anything the scaffold declares.
-    expect(output.manifest.assets.find((a) => a.key === "core/person")?.deps).toEqual([
-      "example/people",
-    ]);
+    expect(output.manifest.assets.find((a) => a.key === "core/person")?.deps).toEqual([]);
+    expect(await read("src/pipeline.ts")).not.toContain("ctx.query");
+    expect(await read("src/pipeline.ts")).not.toContain("ctx.input");
 
     // Fabricated rows: no source-system connection. Storage is the default,
     // which must not leak into config.connection.
@@ -227,6 +225,8 @@ describe("puppi init", () => {
 
     expect(deps).not.toHaveProperty("@puppi/executor-js");
     expect(await main(["try", "example/people", "--dir", project])).toBe(0);
+    expect(stdout).toContain("Ada");
+    expect(stdout).toContain("Grace");
     expect(stdout).toContain("2 rows emitted");
     expect(stdout).toContain("contract  \u2713");
     expect(stdout).toContain(
@@ -234,11 +234,16 @@ describe("puppi init", () => {
     );
     expect(stdout).not.toContain("no quarantine");
 
-    expect(await main(["try", "core/person", "--dir", project])).toBe(2);
-    expect(stderr).toContain(
-      "core/person reads example/people, and needs a latest materialization.",
-    );
-    expect(stderr).not.toContain("not a declared dependency");
+    stdout = "";
+    stderr = "";
+
+    expect(await main(["try", "core/person", "--dir", project])).toBe(0);
+    expect(stdout).toContain("ADA");
+    expect(stdout).toContain("GRACE");
+    expect(stdout).toContain("2 rows emitted");
+    expect(stdout).toContain("contract  \u2713");
+    expect(stderr).not.toContain("ctx.query");
+    expect(stderr).not.toContain("needs a latest materialization");
   });
 
   it("puts puppi-env.d.ts in the tsconfig, which is the arrow that silently does nothing", async () => {
