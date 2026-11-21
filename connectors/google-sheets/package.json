@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-google-sheets",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the Google Sheets API: bearer auth, read a range, append, overwrite, and clear rows.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

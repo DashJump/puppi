@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-posthog",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the PostHog API. The personal API key is sent as a bearer token.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

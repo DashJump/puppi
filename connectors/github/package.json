@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-github",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for GitHub repository issues: bearer auth, pinned API version, Link pages of a bare JSON array.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-pipedrive",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Pipedrive. The API token is sent in the x-api-token header.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

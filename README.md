@@ -7,7 +7,7 @@ You need Node.js 26 or newer.
 ## Install
 
 ```bash
-npm install -g @puppi/cli@0.2.0
+npm install -g @puppi/cli@0.2.1
 ```
 
 `puppi help` lists the commands. There is no `--version` flag.
@@ -20,7 +20,7 @@ npm install -g @puppi/cli@0.2.0
    puppi init my-pipeline
    ```
 
-   The command writes `README.md`, `puppi.config.ts`, `src/pipeline.ts`, `bindings.local.json`, `package.json`, `tsconfig.json`, and `.gitignore`. The connection is `files` (`@puppi/adapter-filesystem`). `bindings.local.json` sets `root` to `out/files`. The assets are `example/people` and `core/person`. `package.json` depends on `@puppi/sdk` at `^0.3.0`. `@puppi/adapter-filesystem`, `@puppi/cli`, and `typescript` are devDependencies.
+   The command writes `README.md`, `puppi.config.ts`, `src/pipeline.ts`, `bindings.local.json`, `package.json`, `tsconfig.json`, and `.gitignore`. The connection is `files` (`@puppi/adapter-filesystem`). `bindings.local.json` sets `root` to `out/files`. The assets are `example/people` and `core/person`. `package.json` depends on `@puppi/sdk` at `^0.4.0`. `@puppi/adapter-filesystem`, `@puppi/cli`, and `typescript` are devDependencies.
 
 2. Install the project's packages.
 

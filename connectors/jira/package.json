@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-jira",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Jira Cloud issue search: bearer access token, nextPageToken pages on GET /rest/api/3/search/jql.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

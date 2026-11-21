@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-apollo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Apollo.io enrichment and search. The API key is sent in the x-api-key header.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

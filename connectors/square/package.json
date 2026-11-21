@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-square",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the Square API: bearer access token, Square-Version header, and cursor pages of locations, payments, customers, orders, and refunds.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-notion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for the Notion API: bearer integration token, Notion-Version header, cursor pages of users, search, and data source queries.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

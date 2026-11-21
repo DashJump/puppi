@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-open-meteo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Source connector for Open-Meteo forecast, geocoding, and archive APIs.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

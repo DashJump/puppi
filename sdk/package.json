@@ -1,6 +1,6 @@
 {
   "name": "@puppi/sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The types and declarations users import: assets, the ctx contract, the HTTP client, and the storage interfaces.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

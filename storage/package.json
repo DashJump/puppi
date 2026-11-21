@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-storage",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The base the object storage adapters are built on: the observed-schema contract, the content digest, Parquet encoding, and the ObjectStore interface.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

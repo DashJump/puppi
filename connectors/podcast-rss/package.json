@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-podcast-rss",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Source connector for podcast RSS and Atom feeds. episodes() takes feed_url per call.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {
