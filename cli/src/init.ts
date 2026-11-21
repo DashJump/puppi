@@ -179,13 +179,9 @@ function version(pkg: string): string | undefined {
 const PIPELINE = `/**
  * Your first pipeline.
  *
- *   example/people ──▶ core/person
- *
- * \`puppi build\` bundles this file, loads it for these declarations, and runs
- * a compile pass over the producers for the \`ctx.input()\` calls — so \`deps\`
- * are never written by hand. It also writes \`puppi-env.d.ts\`, which maps
- * every asset key to the row type its schema implies, then runs this
- * project's \`tsc --noEmit\`. \`ctx.input("typo/key")\` fails the build.
+ * \`puppi build\` bundles this file, writes \`puppi-env.d.ts\` (each asset key
+ * mapped to the row type its schema implies), then runs this project's
+ * \`tsc --noEmit\`.
  */
 
 import { model, source } from "@puppi/sdk";
@@ -226,16 +222,21 @@ export const corePerson = model({
   key: "core/person",
   schema: Person,
 
+  // \`files\` runs no queries, so these rows are not read from example/people.
   run: async (ctx) => {
-    // Compiled into \`deps\`: nothing above declares the edge. The value is the
-    // physical table name, so the SQL embeds it.
-    const upstream = ctx.input("example/people");
+    ctx.log("shaping people");
 
-    const { rows } = await ctx.query<{ id: string; name: string }>(
-      \`select id, upper(name) as name from \${upstream} order by id\`,
+    const people = [
+      { id: "1", name: "Ada" },
+      { id: "2", name: "Grace" },
+    ];
+
+    await ctx.emit(
+      people.map((person) => ({
+        id: person.id,
+        name: person.name.toUpperCase(),
+      })),
     );
-
-    await ctx.emit(rows);
   },
 });
 `;
