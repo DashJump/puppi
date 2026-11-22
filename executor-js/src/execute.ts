@@ -37,6 +37,14 @@ export class AttemptFenced extends Error {
   }
 }
 
+/** The engine cancelled the run. The attempt stops and posts no result. */
+export class AttemptCancelled extends Error {
+  constructor() {
+    super("attempt cancelled");
+    this.name = "AttemptCancelled";
+  }
+}
+
 /** Resolves once the engine has committed or rejected the attempt. */
 export type SettleAttempt = (result: ResultEvent | ErrorEvent) => Promise<SettleOutcome>;
 
@@ -192,6 +200,8 @@ export async function execute(
 
     return result;
   } catch (error) {
+    if (error instanceof AttemptCancelled) throw error;
+
     if (isUnchanged(error) || shim.unchangedSignaled) {
       return finishUnchanged(input, shim, adapter, emit, settleOnce);
     }

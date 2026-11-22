@@ -5,7 +5,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 
 import { isDropTables, runDropTables } from "./drop-tables.js";
-import { errorEvent, execute } from "./execute.js";
+import { AttemptCancelled, errorEvent, execute } from "./execute.js";
 import { batchLogs } from "./log-batch.js";
 import {
   assertValidLease,
@@ -78,6 +78,14 @@ interface Ack {
   outcome?: "recorded" | "rejected" | "fenced" | "skipped";
 }
 
+function isAbort(line: string): boolean {
+  try {
+    return (JSON.parse(line) as { abort?: unknown } | null)?.abort === true;
+  } catch {
+    return false;
+  }
+}
+
 async function runAcked(): Promise<void> {
   const lines = createInterface({ input: process.stdin });
   const queued: string[] = [];
@@ -87,13 +95,27 @@ async function runAcked(): Promise<void> {
   let closed = false;
   let finishing = false;
   let closeHandled = false;
+  let aborted = false;
   // Read before user code runs. A bundle can retarget the variable; the
   // directory created at startup still has to be removed, and a path outside
   // this launcher's root must not be.
   const owned = captureScratch();
 
+  const abortAttempt = (): void => {
+    // Nothing checks `aborted` until the producer next waits for an ack, so
+    // close now instead of letting user code run until the parent kills it.
+    aborted = true;
+    finishing = true;
+    lines.close();
+  };
+
   lines.on("line", (line) => {
     if (!line.trim()) return;
+
+    if (isAbort(line)) {
+      abortAttempt();
+      return;
+    }
 
     const resolveWaiter = waiters.shift();
 
@@ -135,10 +157,13 @@ async function runAcked(): Promise<void> {
   };
 
   const ackFor = async (envelope: OutboundEnvelope): Promise<Ack> => {
+    if (aborted) throw new AttemptCancelled();
+
     writeEnvelope(envelope);
     const line = await nextLine();
 
-    if (line === null) throw new Error("attempt outcome unknown");
+    if (line === null)
+      throw aborted ? new AttemptCancelled() : new Error("attempt outcome unknown");
 
     try {
       return JSON.parse(line) as Ack;
@@ -161,6 +186,8 @@ async function runAcked(): Promise<void> {
     const inputLine = await nextLine();
 
     if (inputLine === null) {
+      if (aborted) return;
+
       await waitAck(orphanComplete("executor received no input"));
       return;
     }
@@ -205,9 +232,9 @@ async function runAcked(): Promise<void> {
     );
     await batch.flush();
   } catch (error) {
-    // The outcome ack already ended the attempt. A second complete would wait
-    // for an ack the pool will not send.
-    if (!settled) {
+    // After an abort or an outcome ack the parent sends no more acks, so a
+    // complete here would wait forever.
+    if (!aborted && !settled) {
       try {
         await logs?.flush();
         await waitAck(attempt.complete(errorEvent(error)));

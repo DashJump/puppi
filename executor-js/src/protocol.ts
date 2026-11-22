@@ -9,6 +9,9 @@ import type { Attempt, Binding, CheckResult, Column } from "@puppi/sdk/protocol"
 
 export type { Attempt, Binding, CheckResult, Column };
 
+// Matches the engine's cancel grace.
+export const CANCEL_KILL_MS = 30_000;
+
 export interface ExecutorInput extends Attempt {
   bundle_ref: string;
   sdk_version: string;

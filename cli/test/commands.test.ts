@@ -117,6 +117,44 @@ function line(message: string) {
 }
 
 describe("puppi run", () => {
+  it("needs a run id to cancel", async () => {
+    expect(await run("run", "cancel")).toBe(2);
+    expect(stderr).toContain("puppi run cancel <run-id>");
+    expect(calls).toEqual([]);
+  });
+
+  it.each([
+    ["queued", "cancelled", "run r1 cancelled", false],
+    ["running", "running", "run r1 running, cancel requested", true],
+  ] as const)("cancels a %s run", async (_label, status, printed, cancelRequested) => {
+    engine({
+      "POST /runs/r1/cancel": settledRun({ status }),
+    });
+
+    stdout = "";
+    expect(await run("run", "cancel", "r1")).toBe(0);
+    expect(stdout).toContain(printed);
+    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual(["POST /runs/r1/cancel"]);
+
+    stdout = "";
+    expect(await run("run", "cancel", "r1", "--json")).toBe(0);
+    const parsed = JSON.parse(stdout) as { kind?: string; cancelRequested?: boolean };
+
+    expect(parsed.kind).toBeUndefined();
+    expect(parsed.cancelRequested).toBe(cancelRequested);
+  });
+
+  it("exits 4 when --wait returns a cancelled run", async () => {
+    engine({
+      "GET /environments/prod/assets": [asset()],
+      "POST /environments/prod/runs": settledRun({ status: "queued", attempts: [] }),
+      "GET /runs/r1": settledRun({ status: "cancelled" }),
+    });
+
+    expect(await run("run", "--wait")).toBe(4);
+    expect(stdout).toContain("run r1 cancelled");
+  });
+
   it("triggers the run, prints how to follow it, and returns without polling", async () => {
     engine({
       "GET /environments/prod/assets": [asset()],

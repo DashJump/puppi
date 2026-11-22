@@ -108,7 +108,10 @@ describe("the remote worker", () => {
     });
   });
 
-  it("stops when the engine rejects the fence", async () => {
+  it.each([
+    ["stale_fence", ["/events", "/complete"]],
+    ["cancelled", ["/events"]],
+  ])("a 409 %s stops the attempt", async (error, posted) => {
     const received: string[] = [];
     const token = "fenced-attempt-token";
     let base = "";
@@ -138,8 +141,8 @@ describe("the remote worker", () => {
 
       await readBody(request);
       received.push(request.url ?? "");
-      response.writeHead(409);
-      response.end();
+      response.writeHead(409, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error }));
     });
 
     await new Promise<void>((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
@@ -154,7 +157,7 @@ describe("the remote worker", () => {
     });
 
     expect(code).toBe(0);
-    expect(received).toEqual(["/events", "/complete"]);
+    expect(received).toEqual(posted);
   });
 
   it("removes the downloaded bundle and the attempt temp files", async () => {
