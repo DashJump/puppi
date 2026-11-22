@@ -15,7 +15,7 @@ export type Api = {
 export const operations: Record<keyof Api["responses"], Operation> = {
   "get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}": {
     method: "get",
-    path: "/contacts",
+    path: "/crm/objects/2026-09/contacts",
     query: ["after", "archived", "associations", "limit", "properties", "propertiesWithHistory"],
   },
 };

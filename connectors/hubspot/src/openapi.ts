@@ -4,7 +4,7 @@
  */
 
 export type paths = {
-  "/contacts": {
+  "/crm/objects/2026-09/contacts": {
     parameters: {
       query?: never;
       header?: never;
@@ -28,55 +28,27 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
+    /** @description Contains the id and type of an association */
+    AssociatedId: {
+      /** @description The unique identifier for the associated object. This is a string value. */
+      id: string;
+      /**
+       * @description The type of association between the objects. This is a string value.
+       * @example deal_to_contact
+       */
+      type: string;
+    };
+    /** @description Represents a collection of associated IDs returned by an API request, including pagination details for navigating through the results. */
+    CollectionResponseAssociatedId: {
+      paging?: components["schemas"]["Paging"];
+      /** @description An array of associated IDs, where each item represents an associated object. The array contains objects of type 'AssociatedId'. */
+      results: components["schemas"]["AssociatedId"][];
+    };
     /** @description Represents a paginated collection response that includes simple public objects with their associations. This component is used to handle the results and pagination details when retrieving a list of objects from the API. */
     CollectionResponseSimplePublicObjectWithAssociationsForwardPaging: {
       paging?: components["schemas"]["ForwardPaging"];
       /** @description An array of SimplePublicObjectWithAssociations, each representing a CRM object with its associated data. */
       results: components["schemas"]["SimplePublicObjectWithAssociations"][];
-    };
-    /** @description Paging information for forward-only pagination. Contains the next page reference when more results are available; omitted or empty on the last page. */
-    ForwardPaging: {
-      next?: components["schemas"]["NextPage"];
-    };
-    /** @description Represents a CRM object along with its properties, timestamps, and a set of associated object IDs grouped by association type. */
-    SimplePublicObjectWithAssociations: {
-      /** @description A boolean indicating whether this object has been archived. */
-      archived: boolean;
-      /**
-       * Format: date-time
-       * @description The date and time when this object was archived, in ISO 8601 format.
-       */
-      archivedAt?: string;
-      /** @description A map of associated object types to their respective associated IDs. */
-      associations?: {
-        [key: string]: components["schemas"]["CollectionResponseAssociatedId"];
-      };
-      /**
-       * Format: date-time
-       * @description The date and time when this object was created, in ISO 8601 format.
-       */
-      createdAt: string;
-      /** @description The unique identifier for this object. */
-      id: string;
-      /** @description An identifier used for tracing the write operations on this object. */
-      objectWriteTraceId?: string;
-      /** @description A map of property names to their current values for this object. */
-      properties: {
-        [key: string]: string;
-      };
-      /** @description A map of property names to their values along with a history of changes, including timestamps. */
-      propertiesWithHistory?: {
-        [key: string]: components["schemas"]["ValueWithTimestamp"][];
-      };
-      /**
-       * Format: date-time
-       * @description The date and time when this object was last updated, in ISO 8601 format.
-       */
-      updatedAt: string;
-      /** @description The URL link to access this object. */
-      url?: string;
-      /** @description A list of warnings associated with this object, each containing a category, message, and context. */
-      warnings?: components["schemas"]["PublicObjectWarning"][];
     };
     /**
      * @description Represents an error response returned by the API when an operation fails. This component is used in various endpoints to provide detailed information about the error encountered.
@@ -119,6 +91,28 @@ export type components = {
       /** @description A specific category that contains more specific detail about the error */
       subCategory?: string;
     };
+    /** @description Represents detailed information about an error that occurred in the API. This component is used to provide additional context and specifics about errors, typically as part of an error response. */
+    ErrorDetail: {
+      /** @description The status code associated with the error detail */
+      code?: string;
+      /**
+       * @description Context about the error condition
+       * @example {missingScopes=[scope1, scope2]}
+       */
+      context?: {
+        [key: string]: string[];
+      };
+      /** @description The name of the field or parameter in which the error was found. */
+      in?: string;
+      /** @description A human readable message describing the error along with remediation steps where appropriate */
+      message: string;
+      /** @description A specific category that contains more specific detail about the error */
+      subCategory?: string;
+    };
+    /** @description Paging information for forward-only pagination. Contains the next page reference when more results are available; omitted or empty on the last page. */
+    ForwardPaging: {
+      next?: components["schemas"]["NextPage"];
+    };
     /** @description Specifies the paging information needed to retrieve the next set of results in a paginated API response */
     NextPage: {
       /** @description A string token that indicates the position after the last item on the current page. This token is used to fetch the next set of results. */
@@ -126,11 +120,68 @@ export type components = {
       /** @description A string URL that provides a direct link to the next page of results. */
       link?: string;
     };
-    /** @description Represents a collection of associated IDs returned by an API request, including pagination details for navigating through the results. */
-    CollectionResponseAssociatedId: {
-      paging?: components["schemas"]["Paging"];
-      /** @description An array of associated IDs, where each item represents an associated object. The array contains objects of type 'AssociatedId'. */
-      results: components["schemas"]["AssociatedId"][];
+    /** @description Represents the pagination information for navigating through a list of results in the API. It provides details on how to access the previous or next set of results. */
+    Paging: {
+      next?: components["schemas"]["NextPage"];
+      prev?: components["schemas"]["PreviousPage"];
+    };
+    /** @description specifies the paging information needed to retrieve the previous set of results in a paginated API response */
+    PreviousPage: {
+      /** @description A string token used to identify the position before the current page in a paginated list. */
+      before: string;
+      /** @description A string URL that provides a direct link to the previous page of results. */
+      link?: string;
+    };
+    /** @description Represents a warning message related to a public object in HubSpot, providing details about the nature and context of the warning. */
+    PublicObjectWarning: {
+      /** @description A string representing the category of the warning. */
+      category: string;
+      /** @description An object providing additional context for the warning, with string values for each context key. */
+      context: {
+        [key: string]: string;
+      };
+      /** @description A string containing the warning message. */
+      message: string;
+    };
+    /** @description Represents a CRM object along with its properties, timestamps, and a set of associated object IDs grouped by association type. */
+    SimplePublicObjectWithAssociations: {
+      /** @description A boolean indicating whether this object has been archived. */
+      archived: boolean;
+      /**
+       * Format: date-time
+       * @description The date and time when this object was archived, in ISO 8601 format.
+       */
+      archivedAt?: string;
+      /** @description A map of associated object types to their respective associated IDs. */
+      associations?: {
+        [key: string]: components["schemas"]["CollectionResponseAssociatedId"];
+      };
+      /**
+       * Format: date-time
+       * @description The date and time when this object was created, in ISO 8601 format.
+       */
+      createdAt: string;
+      /** @description The unique identifier for this object. */
+      id: string;
+      /** @description An identifier used for tracing the write operations on this object. */
+      objectWriteTraceId?: string;
+      /** @description A map of property names to their current values for this object. */
+      properties: {
+        [key: string]: string;
+      };
+      /** @description A map of property names to their values along with a history of changes, including timestamps. */
+      propertiesWithHistory?: {
+        [key: string]: components["schemas"]["ValueWithTimestamp"][];
+      };
+      /**
+       * Format: date-time
+       * @description The date and time when this object was last updated, in ISO 8601 format.
+       */
+      updatedAt: string;
+      /** @description The URL link to access this object. */
+      url?: string;
+      /** @description A list of warnings associated with this object, each containing a category, message, and context. */
+      warnings?: components["schemas"]["PublicObjectWarning"][];
     };
     /** @description Property model that includes timestamp. */
     ValueWithTimestamp: {
@@ -153,57 +204,6 @@ export type components = {
       /** @description The actual value being recorded. It is a string. */
       value: string;
     };
-    /** @description Represents a warning message related to a public object in HubSpot, providing details about the nature and context of the warning. */
-    PublicObjectWarning: {
-      /** @description A string representing the category of the warning. */
-      category: string;
-      /** @description An object providing additional context for the warning, with string values for each context key. */
-      context: {
-        [key: string]: string;
-      };
-      /** @description A string containing the warning message. */
-      message: string;
-    };
-    /** @description Represents detailed information about an error that occurred in the API. This component is used to provide additional context and specifics about errors, typically as part of an error response. */
-    ErrorDetail: {
-      /** @description The status code associated with the error detail */
-      code?: string;
-      /**
-       * @description Context about the error condition
-       * @example {missingScopes=[scope1, scope2]}
-       */
-      context?: {
-        [key: string]: string[];
-      };
-      /** @description The name of the field or parameter in which the error was found. */
-      in?: string;
-      /** @description A human readable message describing the error along with remediation steps where appropriate */
-      message: string;
-      /** @description A specific category that contains more specific detail about the error */
-      subCategory?: string;
-    };
-    /** @description Represents the pagination information for navigating through a list of results in the API. It provides details on how to access the previous or next set of results. */
-    Paging: {
-      next?: components["schemas"]["NextPage"];
-      prev?: components["schemas"]["PreviousPage"];
-    };
-    /** @description Contains the id and type of an association */
-    AssociatedId: {
-      /** @description The unique identifier for the associated object. This is a string value. */
-      id: string;
-      /**
-       * @description The type of association between the objects. This is a string value.
-       * @example deal_to_contact
-       */
-      type: string;
-    };
-    /** @description specifies the paging information needed to retrieve the previous set of results in a paginated API response */
-    PreviousPage: {
-      /** @description A string token used to identify the position before the current page in a paginated list. */
-      before: string;
-      /** @description A string URL that provides a direct link to the previous page of results. */
-      link?: string;
-    };
   };
   responses: {
     /** @description An error occurred. */
@@ -221,21 +221,21 @@ export type components = {
   headers: never;
   pathItems: never;
 };
-export type SchemaCollectionResponseSimplePublicObjectWithAssociationsForwardPaging =
-  components["schemas"]["CollectionResponseSimplePublicObjectWithAssociationsForwardPaging"];
-export type SchemaForwardPaging = components["schemas"]["ForwardPaging"];
-export type SchemaSimplePublicObjectWithAssociations =
-  components["schemas"]["SimplePublicObjectWithAssociations"];
-export type SchemaError = components["schemas"]["Error"];
-export type SchemaNextPage = components["schemas"]["NextPage"];
+export type SchemaAssociatedId = components["schemas"]["AssociatedId"];
 export type SchemaCollectionResponseAssociatedId =
   components["schemas"]["CollectionResponseAssociatedId"];
-export type SchemaValueWithTimestamp = components["schemas"]["ValueWithTimestamp"];
-export type SchemaPublicObjectWarning = components["schemas"]["PublicObjectWarning"];
+export type SchemaCollectionResponseSimplePublicObjectWithAssociationsForwardPaging =
+  components["schemas"]["CollectionResponseSimplePublicObjectWithAssociationsForwardPaging"];
+export type SchemaError = components["schemas"]["Error"];
 export type SchemaErrorDetail = components["schemas"]["ErrorDetail"];
+export type SchemaForwardPaging = components["schemas"]["ForwardPaging"];
+export type SchemaNextPage = components["schemas"]["NextPage"];
 export type SchemaPaging = components["schemas"]["Paging"];
-export type SchemaAssociatedId = components["schemas"]["AssociatedId"];
 export type SchemaPreviousPage = components["schemas"]["PreviousPage"];
+export type SchemaPublicObjectWarning = components["schemas"]["PublicObjectWarning"];
+export type SchemaSimplePublicObjectWithAssociations =
+  components["schemas"]["SimplePublicObjectWithAssociations"];
+export type SchemaValueWithTimestamp = components["schemas"]["ValueWithTimestamp"];
 export type ResponseError = components["responses"]["Error"];
 export type $defs = Record<string, never>;
 export interface operations {

@@ -23,6 +23,8 @@ export default connector;
 
 const auth = connector.auth;
 const defaultBaseUrl = connector.defaultBaseUrl;
+const listContacts =
+  "get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}" as const;
 
 export class Client extends OpenApiClient<Api> {
   constructor(
@@ -30,9 +32,15 @@ export class Client extends OpenApiClient<Api> {
     secrets: Record<string, string> = {},
     options: ClientOptions = {},
   ) {
-    const [defaults, openApi] = openApiClientOptions(connector, config, secrets, operations, {
-      baseUrl: (version) => baseUrl(config, version),
-    });
+    const published = operations[listContacts];
+    // The published path includes `2026-09`. `v3` puts the version on the other side of `objects`, so this client supplies the prefix.
+    const [defaults, openApi] = openApiClientOptions(
+      connector,
+      config,
+      secrets,
+      { ...operations, [listContacts]: { ...published, path: "/contacts" } },
+      { baseUrl: (version) => baseUrl(config, version) },
+    );
 
     super({ ...config, base_url: defaults.baseUrl }, options, defaults, openApi);
   }
@@ -49,7 +57,7 @@ export class Client extends OpenApiClient<Api> {
   @read
   contacts(args: { limit?: number; cursor?: PageArgs["cursor"] } = {}) {
     return this.pages<Contact>(
-      "get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}",
+      listContacts,
       {
         rows: "results",
         next: "paging.next.after",

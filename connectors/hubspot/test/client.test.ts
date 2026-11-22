@@ -41,8 +41,9 @@ function body(schema: object, overrides: Record<string, unknown> = {}): Record<s
 }
 
 const contactSchema = spec.components.schemas["SimplePublicObjectWithAssociations"] as object;
-const listSchema = spec.paths["/contacts"]?.get?.responses["200"]?.content["application/json"]
-  .schema as object;
+const listSchema = spec.paths["/crm/objects/2026-09/contacts"]?.get?.responses["200"]?.content[
+  "application/json"
+].schema as object;
 
 function contact(overrides: Record<string, unknown> = {}) {
   return body(contactSchema, overrides);
