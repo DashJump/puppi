@@ -28,6 +28,7 @@ const WORKER_VERSION = "0.4";
 const PULSE_MS = 20_000;
 const SILENCE_MS = 60_000;
 const CANCEL_KILL_MS = 30_000;
+const STOP_KILL_MS = 5_000;
 const BACKOFF_BASE_MS = 200;
 const BACKOFF_CAP_MS = 30_000;
 
@@ -863,7 +864,11 @@ function stopAttempt(state: State, attempt: Attempt): void {
   });
 }
 
-function armStop(child: ChildProcess | undefined, reply: () => void, killAfterMs = 5_000): void {
+function armStop(
+  child: ChildProcess | undefined,
+  reply: () => void,
+  killAfterMs = STOP_KILL_MS,
+): void {
   if (!child || child.exitCode !== null || child.signalCode !== null) {
     reply();
     return;

@@ -182,7 +182,26 @@ describe("an acking parent", () => {
         };`),
     );
 
-    const code = await abortAfter(hangInput(bundle, root), started);
+    const code = await exitOnEof({}, async (child) => {
+      const stdin = child.stdin;
+      const stdout = child.stdout;
+      if (!stdin || !stdout) throw new Error("runtime stdio was not piped");
+
+      const lines = createInterface({ input: stdout });
+      lines.on("line", (line) => {
+        if (!line.trim()) return;
+
+        stdin.write(`${JSON.stringify({ ok: true })}\n`);
+      });
+      stdin.on("error", () => undefined);
+      stdin.write(`${JSON.stringify(leaseFor(hangInput(bundle, root)))}\n`);
+
+      const deadline = Date.now() + 3_000;
+      while (!existsSync(started) && Date.now() < deadline) await delay(20);
+      if (!existsSync(started)) throw new Error("bundle never started");
+
+      stdin.write(`${JSON.stringify({ abort: true })}\n`);
+    });
 
     expect({ code, continued: existsSync(continued) }).toEqual({ code: 0, continued: false });
   });
@@ -221,64 +240,6 @@ function hangInput(bundle: string, root: string): ExecutorInput {
     output_storage_ref: "run.things__ack",
     connections: {},
   };
-}
-
-function abortAfter(input: ExecutorInput, started: string): Promise<number | null> {
-  return new Promise((resolveExit, reject) => {
-    const child = spawn(process.execPath, [entry], {
-      env: { ...process.env, PUPPI_EVENT_ACK: "1" },
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    const stdin = child.stdin;
-    const stdout = child.stdout;
-
-    if (!stdin || !stdout) {
-      child.kill();
-      reject(new Error("runtime stdio was not piped"));
-      return;
-    }
-
-    let settled = false;
-    let aborted = false;
-    const timer = setTimeout(() => child.kill("SIGKILL"), 3_000);
-    const lines = createInterface({ input: stdout });
-    const watch = setInterval(() => {
-      if (aborted || !existsSync(started)) return;
-
-      aborted = true;
-      clearInterval(watch);
-      stdin.write(`${JSON.stringify({ abort: true })}\n`);
-    }, 20);
-
-    const finish = (code: number | null): void => {
-      if (settled) return;
-
-      settled = true;
-      clearTimeout(timer);
-      clearInterval(watch);
-      resolveExit(code);
-    };
-
-    const fail = (error: unknown): void => {
-      if (settled) return;
-
-      settled = true;
-      clearTimeout(timer);
-      clearInterval(watch);
-      child.kill("SIGKILL");
-      reject(error instanceof Error ? error : new Error(String(error)));
-    };
-
-    child.on("error", fail);
-    child.on("exit", (code) => finish(code));
-    stdin.on("error", () => undefined);
-    lines.on("line", (line) => {
-      if (!line.trim()) return;
-
-      stdin.write(`${JSON.stringify({ ok: true })}\n`);
-    });
-    stdin.write(`${JSON.stringify(leaseFor(input))}\n`);
-  });
 }
 
 function exitOnEof(
