@@ -29,6 +29,12 @@ const POLL_MS = 750;
  */
 const STILL_GOING = 3;
 
+/**
+ * Exit code when `--wait` returns a cancelled run.
+ * 1 means the run failed, so a cancel stays distinguishable from a bad run.
+ */
+const CANCELLED = 4;
+
 async function trigger(api: Api, environment: string, options: RunOptions): Promise<Run> {
   const body: Record<string, unknown> = {};
 
@@ -298,6 +304,8 @@ interface RunResult {
   /** `--timeout` elapsed. The run itself has not failed. */
   timedOut?: boolean;
   message?: string;
+  /** `puppi run cancel` posted and the engine returned this run. */
+  cancelled?: boolean;
 }
 
 /** `puppi run`: manual runs always execute the whole active graph. */
@@ -352,10 +360,18 @@ async function runCommand(
   const settled = waited.run;
   const after = await assets(api, environment);
 
-  return done({ run: settled, before, after, waited: true }, exitCode(settled, after));
+  return done(
+    { run: settled, before, after, waited: true },
+    settled.status === "cancelled" ? CANCELLED : exitCode(settled, after),
+  );
 }
 
 function renderRun(result: RunResult): void {
+  if (result.cancelled) {
+    note(`run ${result.run.id} ${result.run.status}`);
+    return;
+  }
+
   if (result.timedOut) {
     note(result.message ?? "");
     return;
@@ -427,6 +443,7 @@ export const run: Command<RunResult> = {
     helpBlock(120, [
       "  puppi run                            trigger the whole graph and print the run id",
       "                                       [--force] [--wait] [--timeout <seconds>]",
+      "  puppi run cancel <run-id>            cancel a queued or running run",
     ]),
   ],
   flags: [
@@ -491,6 +508,9 @@ function manualRun(
     throw new UsageError("`puppi run --local` is gone. Run one producer with `puppi try <key>`.");
   }
 
+  if (args.positional[0] === "cancel")
+    return cancelRun(api, args.positional[1], args.positional.length);
+
   if (args.positional.length > 0 || has(args, "upstream") || has(args, "downstream")) {
     throw new UsageError(selectionError(args, names));
   }
@@ -513,6 +533,26 @@ function manualRun(
     { force: has(args, "force") },
     { wait, timeoutMs: wait ? timeoutMs(args) : undefined, asJson },
   );
+}
+
+async function cancelRun(
+  api: Api,
+  id: string | undefined,
+  count: number,
+): Promise<Outcome<RunResult>> {
+  if (!id || count > 2) {
+    throw new UsageError("puppi run cancel needs a run id: `puppi run cancel <run-id>`");
+  }
+
+  const current = await api.post<Run>(`/runs/${id}/cancel`);
+
+  return done({
+    run: current,
+    before: [],
+    after: [],
+    waited: false,
+    cancelled: true,
+  });
 }
 
 /** Seconds. Omitted means wait until the run settles. */

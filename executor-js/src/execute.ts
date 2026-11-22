@@ -37,6 +37,14 @@ export class AttemptFenced extends Error {
   }
 }
 
+/** The parent wrote `{"abort":true}`. The attempt stops and does not post a result. */
+export class AttemptCancelled extends Error {
+  constructor() {
+    super("attempt cancelled");
+    this.name = "AttemptCancelled";
+  }
+}
+
 /** Resolves once the engine has committed or rejected the attempt. */
 export type SettleAttempt = (result: ResultEvent | ErrorEvent) => Promise<SettleOutcome>;
 
@@ -99,6 +107,7 @@ export async function execute(
     try {
       await produce(declaration, shim, adapter);
     } catch (error) {
+      if (error instanceof AttemptCancelled) throw error;
       if (isUnchanged(error) || shim.unchangedSignaled) throw error;
       if (!(await shim.dropExpiredPageToken(error))) throw error;
 
@@ -192,6 +201,8 @@ export async function execute(
 
     return result;
   } catch (error) {
+    if (error instanceof AttemptCancelled) throw error;
+
     if (isUnchanged(error) || shim.unchangedSignaled) {
       return finishUnchanged(input, shim, adapter, emit, settleOnce);
     }

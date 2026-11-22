@@ -4,11 +4,18 @@ import { join } from "node:path";
 
 import { isTransient } from "@puppi/sdk";
 
-import { AttemptFenced, errorEvent, execute, type SettleOutcome } from "../execute.js";
+import {
+  AttemptCancelled,
+  AttemptFenced,
+  errorEvent,
+  execute,
+  type SettleOutcome,
+} from "../execute.js";
 import { assertValidLease, speak, type ExecutorEvent, type Lease } from "../protocol.js";
 import { deliverInOrder } from "./delivery.js";
 import { createScratch, prepareRoot, removeScratch } from "./scratch.js";
 
+const CANCEL_KILL_MS = 30_000;
 const claimUrl = required("PUPPI_CLAIM_URL").replace(/\/$/, "");
 const claimToken = required("PUPPI_CLAIM_TOKEN");
 const workerId = machineId();
@@ -44,7 +51,27 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
 
   let delivery = Promise.resolve();
   let fenced: Fenced | null = null;
+  let cancelled: AttemptCancelled | null = null;
   let posted = false;
+  let killTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const armCancel = (): void => {
+    if (killTimer) return;
+
+    killTimer = setTimeout(() => {
+      process.exit(0);
+    }, CANCEL_KILL_MS);
+    killTimer.unref();
+  };
+
+  const noteStop = (error: unknown): void => {
+    if (error instanceof Fenced) fenced = error;
+    if (error instanceof AttemptCancelled) {
+      cancelled = error;
+      armCancel();
+    }
+  };
+
   const heartbeat = setInterval(() => {
     delivery = delivery
       .then(() =>
@@ -57,10 +84,8 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
       .catch((error: unknown) => {
         // The next checkpoint fails the seal. A write already in flight
         // finishes on this execution's own ref; the engine will not record it.
-        if (error instanceof Fenced) {
-          fenced = error;
-          return;
-        }
+        noteStop(error);
+        if (error instanceof Fenced || error instanceof AttemptCancelled) return;
 
         throw error;
       });
@@ -68,13 +93,14 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
 
   const emit = (event: ExecutorEvent): Promise<void> => {
     if (fenced) return Promise.reject(fenced);
+    if (cancelled) return Promise.reject(cancelled);
 
     const envelope = attempt.event(event);
     const sent = deliverInOrder(delivery, async () => {
       await send(`${claimUrl}/events`, envelope);
     });
     delivery = sent.chain.catch((error: unknown) => {
-      if (error instanceof Fenced) fenced = error;
+      noteStop(error);
       throw error;
     });
     return sent.ack;
@@ -104,8 +130,20 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
     try {
       await delivery;
     } catch (sendError) {
-      if (sendError instanceof Fenced) fenced = sendError;
-      else if (!fenced) throw sendError;
+      noteStop(sendError);
+      if (
+        !(sendError instanceof Fenced) &&
+        !(sendError instanceof AttemptCancelled) &&
+        !fenced &&
+        !cancelled
+      ) {
+        throw sendError;
+      }
+    }
+
+    if (error instanceof AttemptCancelled || cancelled) {
+      process.exitCode = 0;
+      return;
     }
 
     if (error instanceof Fenced || error instanceof AttemptFenced || fenced) {
@@ -115,7 +153,9 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
         try {
           await complete(errorEvent(new Fenced()));
         } catch (sendError) {
-          if (!(sendError instanceof Fenced)) throw sendError;
+          if (!(sendError instanceof Fenced) && !(sendError instanceof AttemptCancelled)) {
+            throw sendError;
+          }
         }
       }
 
@@ -129,9 +169,12 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
       try {
         await complete(result);
       } catch (sendError) {
-        if (!(sendError instanceof Fenced)) throw sendError;
-        process.exitCode = 0;
-        return;
+        if (sendError instanceof Fenced || sendError instanceof AttemptCancelled) {
+          process.exitCode = 0;
+          return;
+        }
+
+        throw sendError;
       }
     }
 
@@ -139,6 +182,7 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
     else process.exitCode = 1;
   } finally {
     clearInterval(heartbeat);
+    clearTimeout(killTimer);
   }
 }
 
@@ -190,13 +234,22 @@ async function send(url: string, body: unknown): Promise<Response> {
     body: JSON.stringify(body),
   });
 
-  if (response.status === 409) throw new Fenced();
+  if (response.status === 409) throw await conflict(response);
 
   if (!response.ok) {
     throw statusError(`${url} rejected delivery with ${response.status}`, response.status);
   }
 
   return response;
+}
+
+async function conflict(response: Response): Promise<Error> {
+  const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+
+  if (body?.error === "cancelled") return new AttemptCancelled();
+  if (body?.error === "stale_fence") return new Fenced();
+
+  return statusError(`claim rejected delivery with ${response.status}`, response.status);
 }
 
 async function request<T>(url: string, init: RequestInit): Promise<T> {

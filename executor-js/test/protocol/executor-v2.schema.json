@@ -664,6 +664,10 @@
         "fenced": {
           "description": "In-flight event ack. true stops the child before another write. The end of the attempt uses outcome instead.",
           "type": "boolean"
+        },
+        "reason": {
+          "description": "The attempt is cancelling. The worker writes {\"abort\":true} and waits out the grace. No fenced field and no outcome.",
+          "const": "cancelled"
         }
       },
       "required": ["message", "attempt_id", "fence"],
@@ -673,6 +677,9 @@
         },
         {
           "required": ["fenced"]
+        },
+        {
+          "required": ["reason"]
         }
       ],
       "additionalProperties": false

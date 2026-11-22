@@ -27,7 +27,7 @@ const WORKER_VERSION = "0.4";
 // The socket closes after 60s with no frame. This pulse is the keepalive.
 const PULSE_MS = 20_000;
 const SILENCE_MS = 60_000;
-const CANCEL_KILL_MS = 5_000;
+const CANCEL_KILL_MS = 30_000;
 const BACKOFF_BASE_MS = 200;
 const BACKOFF_CAP_MS = 30_000;
 
@@ -863,11 +863,7 @@ function stopAttempt(state: State, attempt: Attempt): void {
   });
 }
 
-function armStop(
-  child: ChildProcess | undefined,
-  reply: () => void,
-  killAfterMs = CANCEL_KILL_MS,
-): void {
+function armStop(child: ChildProcess | undefined, reply: () => void, killAfterMs = 5_000): void {
   if (!child || child.exitCode !== null || child.signalCode !== null) {
     reply();
     return;
@@ -901,10 +897,13 @@ function cancel(attempt: Attempt): void {
   if (attempt.awaiting || attempt.releasing) return;
 
   attempt.cancelled = true;
+  clearTimeout(attempt.silence);
   const child = attempt.child;
   if (!child || child.exitCode !== null || child.signalCode !== null) return;
 
-  child.kill("SIGTERM");
+  const stdin = child.stdin;
+  if (stdin && !stdin.destroyed) stdin.write(`${JSON.stringify({ abort: true })}\n`);
+
   const timer = setTimeout(() => {
     if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
   }, CANCEL_KILL_MS);
@@ -1057,6 +1056,12 @@ function attemptOf(state: State, frame: Record<string, unknown>): Attempt | unde
 
 function applySettled(attempt: Attempt, frame: Record<string, unknown>): void {
   if (attempt.lost || attempt.fenced || attempt.releasing) return;
+
+  if (frame["reason"] === "cancelled") {
+    attempt.awaiting = false;
+    cancel(attempt);
+    return;
+  }
 
   if (frame["unknown"] === true) {
     if (attempt.awaiting && !attempt.releasing) {

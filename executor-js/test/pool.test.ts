@@ -602,25 +602,21 @@ describe("pool worker", () => {
     expect(completes(pool, "attempt-a")).toHaveLength(0);
   });
 
-  it("cancel kills a child that ignores SIGTERM", async () => {
+  it("a cancelled settled frame aborts the child", async () => {
     const pool = await start();
-    const digest = publish(
-      pool,
-      "claim-1",
-      stubborn(join(pool.root, "pid-1"), join(pool.root, "term-1")),
-    );
+    const ended = join(pool.root, "ended-1");
+    const term = join(pool.root, "term-1");
+    const digest = publish(pool, "claim-1", stubborn(join(pool.root, "pid-1"), ended, term));
     pool.send(lease("attempt-1", "run-1", digest, "claim-1", pool.root));
     await pool.until("running", () => pid(pool, "pid-1") !== undefined);
 
-    const started = Date.now();
-    pool.send({ message: "cancel", attempt_id: "attempt-1", fence: 1, reason: "stopped" });
-    await pool.until("signaled", () => existsSync(join(pool.root, "term-1")));
-    await delay(1_000);
-    expect(alive(pid(pool, "pid-1"))).toBe(true);
+    pool.send({ message: "settled", attempt_id: "attempt-1", fence: 1, reason: "cancelled" });
+    await pool.until("ended", () => existsSync(ended));
 
-    await pool.until("killed", () => !alive(pid(pool, "pid-1")), 8_000);
-    expect(Date.now() - started).toBeGreaterThanOrEqual(4_500);
-  }, 15_000);
+    expect(existsSync(term)).toBe(false);
+    expect(alive(pid(pool, "pid-1"))).toBe(false);
+    expect(completes(pool, "attempt-1")).toHaveLength(0);
+  });
 
   it("stop signals once and replies stopped with the held fence", async () => {
     const pool = await start();
@@ -1367,7 +1363,7 @@ function termCount(pidFile: string, termFile: string): string {
     };`;
 }
 
-function stubborn(pidFile: string, termFile: string): string {
+function stubborn(pidFile: string, endedFile: string, termFile: string): string {
   return `import { writeFileSync } from "node:fs";
     export default {
       adapters: {},
@@ -1377,8 +1373,11 @@ function stubborn(pidFile: string, termFile: string): string {
           checks: {},
           config: {},
           run: async () => {
+            process.on("exit", () => {
+              writeFileSync(${JSON.stringify(endedFile)}, "1");
+            });
             process.on("SIGTERM", () => {
-              writeFileSync(${JSON.stringify(termFile)}, String(Date.now()));
+              writeFileSync(${JSON.stringify(termFile)}, "1");
             });
             writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
             await new Promise(() => setInterval(() => undefined, 1_000));

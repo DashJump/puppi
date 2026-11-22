@@ -147,6 +147,45 @@ describe("an acking parent", () => {
       outside: existsSync(join(outside, "keep")),
     }).toEqual({ code: 1, scratch: false, outside: true });
   });
+
+  it('{"abort":true} on stdin ends the attempt', async () => {
+    const root = mkdtempSync(join(tmpdir(), "puppi-ack-abort-"));
+    roots.push(root);
+    const bundle = join(root, "bundle.mjs");
+    const started = join(root, "started");
+    const continued = join(root, "continued");
+
+    writeFileSync(
+      bundle,
+      bundleCarryingStorage(`import { writeFileSync } from "node:fs";
+        export default {
+          adapters: {},
+          assets: {
+            "source/things": {
+              key: "source/things",
+              group: "default",
+              visibility: "project",
+              role: "source",
+              producer: "ts",
+              deps: [],
+              connections: [],
+              partitioning: {},
+              checks: {},
+              config: {},
+              run: async () => {
+                writeFileSync(${JSON.stringify(started)}, "1");
+                await new Promise((resolve) => setTimeout(resolve, 60_000));
+                writeFileSync(${JSON.stringify(continued)}, "1");
+              },
+            },
+          },
+        };`),
+    );
+
+    const code = await abortAfter(hangInput(bundle, root), started);
+
+    expect({ code, continued: existsSync(continued) }).toEqual({ code: 0, continued: false });
+  });
 });
 
 function leaseFor(input: ExecutorInput): Lease {
@@ -182,6 +221,64 @@ function hangInput(bundle: string, root: string): ExecutorInput {
     output_storage_ref: "run.things__ack",
     connections: {},
   };
+}
+
+function abortAfter(input: ExecutorInput, started: string): Promise<number | null> {
+  return new Promise((resolveExit, reject) => {
+    const child = spawn(process.execPath, [entry], {
+      env: { ...process.env, PUPPI_EVENT_ACK: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const stdin = child.stdin;
+    const stdout = child.stdout;
+
+    if (!stdin || !stdout) {
+      child.kill();
+      reject(new Error("runtime stdio was not piped"));
+      return;
+    }
+
+    let settled = false;
+    let aborted = false;
+    const timer = setTimeout(() => child.kill("SIGKILL"), 3_000);
+    const lines = createInterface({ input: stdout });
+    const watch = setInterval(() => {
+      if (aborted || !existsSync(started)) return;
+
+      aborted = true;
+      clearInterval(watch);
+      stdin.write(`${JSON.stringify({ abort: true })}\n`);
+    }, 20);
+
+    const finish = (code: number | null): void => {
+      if (settled) return;
+
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(watch);
+      resolveExit(code);
+    };
+
+    const fail = (error: unknown): void => {
+      if (settled) return;
+
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(watch);
+      child.kill("SIGKILL");
+      reject(error instanceof Error ? error : new Error(String(error)));
+    };
+
+    child.on("error", fail);
+    child.on("exit", (code) => finish(code));
+    stdin.on("error", () => undefined);
+    lines.on("line", (line) => {
+      if (!line.trim()) return;
+
+      stdin.write(`${JSON.stringify({ ok: true })}\n`);
+    });
+    stdin.write(`${JSON.stringify(leaseFor(input))}\n`);
+  });
 }
 
 function exitOnEof(

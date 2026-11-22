@@ -138,8 +138,8 @@ describe("the remote worker", () => {
 
       await readBody(request);
       received.push(request.url ?? "");
-      response.writeHead(409);
-      response.end();
+      response.writeHead(409, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: "stale_fence" }));
     });
 
     await new Promise<void>((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
@@ -155,6 +155,55 @@ describe("the remote worker", () => {
 
     expect(code).toBe(0);
     expect(received).toEqual(["/events", "/complete"]);
+  });
+
+  it("takes the grace when the engine says the run is cancelled", async () => {
+    const received: string[] = [];
+    const token = "cancelled-attempt-token";
+    let base = "";
+
+    const server = createServer(async (request, response) => {
+      if (request.url === "/lease") {
+        return json(response, {
+          message: "lease",
+          execution: {
+            attempt_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            run_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            fence: 1,
+            runtime_profile: "remote-node",
+            bundle_digest: digest,
+            output_materialization_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+            lease_expires_at: null,
+            deadline_at: null,
+          },
+          input: { ...input, bundle_ref: `${base}/bundle` },
+        });
+      }
+
+      if (request.url === "/bundle") {
+        response.writeHead(200, { "content-type": "text/javascript" });
+        return response.end(bundle);
+      }
+
+      await readBody(request);
+      received.push(request.url ?? "");
+      response.writeHead(409, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: "cancelled" }));
+    });
+
+    await new Promise<void>((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("test server has no TCP address");
+    base = `http://127.0.0.1:${address.port}`;
+    closeServer = () => new Promise((resolveClose) => server.close(() => resolveClose()));
+
+    const { code } = await runWorker({
+      PUPPI_CLAIM_URL: base,
+      PUPPI_CLAIM_TOKEN: token,
+    });
+
+    expect(code).toBe(0);
+    expect(received).toEqual(["/events"]);
   });
 
   it("removes the downloaded bundle and the attempt temp files", async () => {

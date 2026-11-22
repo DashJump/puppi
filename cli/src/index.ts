@@ -81,7 +81,8 @@ const FOOTER = [
   "",
   "  Exit codes: 0 fine, 1 the engine refused or the run did not succeed",
   "  (failed, blocked downstream, or a quarantined materialization), 2 usage,",
-  "  3 `puppi run --wait --timeout` returned while the run was still going.",
+  "  3 `puppi run --wait --timeout` returned while the run was still going,",
+  "  4 `puppi run --wait` returned because the run was cancelled.",
 ].join("\n");
 
 /** The `puppi` command. Returns the exit code; `bin/puppi.js` is the process wrapper. */
