@@ -1,6 +1,6 @@
 {
   "name": "@puppi/cli",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "The puppi command: build a pipeline, deploy it, and run it.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {

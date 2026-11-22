@@ -7,7 +7,7 @@ You need Node.js 26 or newer.
 ## Install
 
 ```bash
-npm install -g @puppi/cli@0.2.2
+npm install -g @puppi/cli@0.3.0
 ```
 
 `puppi help` lists the commands. There is no `--version` flag.

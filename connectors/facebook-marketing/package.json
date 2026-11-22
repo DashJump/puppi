@@ -1,6 +1,6 @@
 {
   "name": "@puppi/adapter-facebook-marketing",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Source connector for the Facebook Marketing API: bearer access token, pinned API version, cursor pages of campaigns.",
   "homepage": "https://github.com/DashJump/puppi",
   "bugs": {
