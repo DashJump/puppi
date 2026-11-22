@@ -11,11 +11,16 @@ import {
   execute,
   type SettleOutcome,
 } from "../execute.js";
-import { assertValidLease, speak, type ExecutorEvent, type Lease } from "../protocol.js";
+import {
+  assertValidLease,
+  CANCEL_KILL_MS,
+  speak,
+  type ExecutorEvent,
+  type Lease,
+} from "../protocol.js";
 import { deliverInOrder } from "./delivery.js";
 import { createScratch, prepareRoot, removeScratch } from "./scratch.js";
 
-const CANCEL_KILL_MS = 30_000;
 const claimUrl = required("PUPPI_CLAIM_URL").replace(/\/$/, "");
 const claimToken = required("PUPPI_CLAIM_TOKEN");
 const workerId = machineId();
@@ -26,23 +31,29 @@ const headers = {
 
 async function main(): Promise<void> {
   const root = prepareRoot("puppi-worker-", workerId);
-  const lease = await request<Lease>(`${claimUrl}/lease`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ worker_id: workerId }),
-  });
-  assertValidLease(lease);
-  const scratch = createScratch(root);
+  let scratch: string | undefined;
 
   try {
+    const lease = await request<Lease>(`${claimUrl}/lease`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ worker_id: workerId }),
+    });
+    assertValidLease(lease);
+    scratch = createScratch(root);
     await runLease(lease, scratch);
+  } catch (error: unknown) {
+    process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
+    process.exitCode = 1;
   } finally {
-    removeScratch(scratch);
+    if (scratch !== undefined) removeScratch(scratch);
     removeScratch(root);
   }
+
+  process.exit(process.exitCode ?? 0);
 }
 
-async function runLease(lease: Lease, scratch: string): Promise<void> {
+async function runLease(lease: Lease, scratch: string): Promise<Stop | null> {
   // `os.tmpdir()` follows TMPDIR, so the download and the attempt's temp files
   // share this directory. A fence or a failed import still takes main's finally.
   process.env["TMPDIR"] = scratch;
@@ -50,26 +61,31 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
   const attempt = speak(lease.execution);
 
   let delivery = Promise.resolve();
-  let fenced: Fenced | null = null;
-  let cancelled: AttemptCancelled | null = null;
+  let stop: Stop | null = null;
   let posted = false;
   let killTimer: ReturnType<typeof setTimeout> | undefined;
+  let graceOver!: () => void;
+  const grace = new Promise<void>((resolve) => {
+    graceOver = resolve;
+  });
 
   const armCancel = (): void => {
     if (killTimer) return;
 
-    killTimer = setTimeout(() => {
-      process.exit(0);
-    }, CANCEL_KILL_MS);
-    killTimer.unref();
+    killTimer = setTimeout(graceOver, CANCEL_KILL_MS);
   };
 
-  const noteStop = (error: unknown): void => {
-    if (error instanceof Fenced) fenced = error;
-    if (error instanceof AttemptCancelled) {
-      cancelled = error;
-      armCancel();
-    }
+  const noteStop = (error: unknown): boolean => {
+    const found = stopOf(error);
+    if (!found) return false;
+
+    stop ??= found;
+    if (stop === "cancelled") armCancel();
+    return true;
+  };
+
+  const swallowStop = (error: unknown): void => {
+    if (!noteStop(error)) throw error;
   };
 
   const heartbeat = setInterval(() => {
@@ -84,16 +100,12 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
       .catch((error: unknown) => {
         // The next checkpoint fails the seal. A write already in flight
         // finishes on this execution's own ref; the engine will not record it.
-        noteStop(error);
-        if (error instanceof Fenced || error instanceof AttemptCancelled) return;
-
-        throw error;
+        if (!noteStop(error)) throw error;
       });
   }, 20_000);
 
   const emit = (event: ExecutorEvent): Promise<void> => {
-    if (fenced) return Promise.reject(fenced);
-    if (cancelled) return Promise.reject(cancelled);
+    if (stop) return Promise.reject(stop === "fenced" ? new Fenced() : new AttemptCancelled());
 
     const envelope = attempt.event(event);
     const sent = deliverInOrder(delivery, async () => {
@@ -123,67 +135,59 @@ async function runLease(lease: Lease, scratch: string): Promise<void> {
     throw new Error("attempt outcome unknown");
   };
 
-  try {
-    await execute(lease.input, emit, complete);
-    await delivery;
-  } catch (error) {
+  const finished = (async (): Promise<void> => {
     try {
+      await execute(lease.input, emit, complete);
       await delivery;
-    } catch (sendError) {
-      noteStop(sendError);
-      if (
-        !(sendError instanceof Fenced) &&
-        !(sendError instanceof AttemptCancelled) &&
-        !fenced &&
-        !cancelled
-      ) {
-        throw sendError;
+    } catch (error) {
+      noteStop(error);
+
+      try {
+        await delivery;
+      } catch (sendError) {
+        if (!noteStop(sendError) && !stop) throw sendError;
       }
-    }
 
-    if (error instanceof AttemptCancelled || cancelled) {
-      process.exitCode = 0;
-      return;
-    }
+      if (stop === "cancelled") return;
 
-    if (error instanceof Fenced || error instanceof AttemptFenced || fenced) {
-      // A fence keeps the pages the checkpoint names. An end-of-attempt
-      // `fenced` outcome already dropped the output table.
+      if (stop === "fenced") {
+        // A fence keeps the pages the checkpoint names. An end-of-attempt
+        // `fenced` outcome already dropped the output table.
+        if (!posted) await complete(errorEvent(new Fenced())).catch(swallowStop);
+        return;
+      }
+
+      const result = errorEvent(error);
+
       if (!posted) {
         try {
-          await complete(errorEvent(new Fenced()));
+          await complete(result);
         } catch (sendError) {
-          if (!(sendError instanceof Fenced) && !(sendError instanceof AttemptCancelled)) {
-            throw sendError;
-          }
-        }
-      }
-
-      process.exitCode = 0;
-      return;
-    }
-
-    const result = errorEvent(error);
-
-    if (!posted) {
-      try {
-        await complete(result);
-      } catch (sendError) {
-        if (sendError instanceof Fenced || sendError instanceof AttemptCancelled) {
-          process.exitCode = 0;
+          if (!noteStop(sendError)) throw sendError;
           return;
         }
-
-        throw sendError;
       }
-    }
 
-    if (result.class === "retryable") process.exitCode = 75;
-    else process.exitCode = 1;
+      process.exitCode = result.class === "retryable" ? 75 : 1;
+    }
+  })();
+
+  let graceWon = false;
+
+  try {
+    await Promise.race([
+      finished,
+      grace.then(() => {
+        graceWon = true;
+      }),
+    ]);
   } finally {
     clearInterval(heartbeat);
     clearTimeout(killTimer);
+    if (graceWon) void finished.catch(() => undefined);
   }
+
+  return stop;
 }
 
 function machineId(): string {
@@ -220,11 +224,19 @@ function verifyBundle(bytes: Uint8Array, expected: string | null): void {
   }
 }
 
+type Stop = "fenced" | "cancelled";
+
 class Fenced extends Error {
   constructor() {
     super("attempt fence rejected");
     this.name = "Fenced";
   }
+}
+
+function stopOf(error: unknown): Stop | null {
+  if (error instanceof Fenced || error instanceof AttemptFenced) return "fenced";
+  if (error instanceof AttemptCancelled) return "cancelled";
+  return null;
 }
 
 async function send(url: string, body: unknown): Promise<Response> {
@@ -234,7 +246,7 @@ async function send(url: string, body: unknown): Promise<Response> {
     body: JSON.stringify(body),
   });
 
-  if (response.status === 409) throw await conflict(response);
+  if (response.status === 409) throw await conflict(url, response);
 
   if (!response.ok) {
     throw statusError(`${url} rejected delivery with ${response.status}`, response.status);
@@ -243,13 +255,16 @@ async function send(url: string, body: unknown): Promise<Response> {
   return response;
 }
 
-async function conflict(response: Response): Promise<Error> {
-  const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+async function conflict(url: string, response: Response): Promise<Error> {
+  const body = (await response.json().catch(() => null)) as {
+    error?: unknown;
+    reason?: unknown;
+  } | null;
 
-  if (body?.error === "cancelled") return new AttemptCancelled();
+  if (body?.reason === "cancelled" || body?.error === "cancelled") return new AttemptCancelled();
   if (body?.error === "stale_fence") return new Fenced();
 
-  return statusError(`claim rejected delivery with ${response.status}`, response.status);
+  return statusError(`${url} rejected delivery with ${response.status}`, response.status);
 }
 
 async function request<T>(url: string, init: RequestInit): Promise<T> {
@@ -300,7 +315,4 @@ function required(name: string): string {
   return value;
 }
 
-void main().catch((error: unknown) => {
-  process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
-  process.exitCode = 1;
-});
+void main();

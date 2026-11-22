@@ -80,13 +80,7 @@ interface Ack {
 
 function isAbort(line: string): boolean {
   try {
-    const parsed: unknown = JSON.parse(line);
-    return (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed) &&
-      (parsed as { abort?: unknown }).abort === true
-    );
+    return (JSON.parse(line) as { abort?: unknown } | null)?.abort === true;
   } catch {
     return false;
   }
@@ -108,19 +102,11 @@ async function runAcked(): Promise<void> {
   const owned = captureScratch();
 
   const abortAttempt = (): void => {
-    if (aborted) return;
-
+    // Nothing checks `aborted` until the producer next waits for an ack, so
+    // close now instead of letting user code run until the parent kills it.
     aborted = true;
-    const pending = waiters.splice(0);
-
-    if (pending.length === 0) {
-      // The producer is not waiting on an ack, so this line would sit unread
-      // until the parent's grace killed the process.
-      finishing = true;
-      process.exit(0);
-    }
-
-    for (const resolveWaiter of pending) resolveWaiter(null);
+    finishing = true;
+    lines.close();
   };
 
   lines.on("line", (line) => {
@@ -171,14 +157,13 @@ async function runAcked(): Promise<void> {
   };
 
   const ackFor = async (envelope: OutboundEnvelope): Promise<Ack> => {
+    if (aborted) throw new AttemptCancelled();
+
     writeEnvelope(envelope);
     const line = await nextLine();
 
-    if (line === null) {
-      if (aborted) throw new AttemptCancelled();
-
-      throw new Error("attempt outcome unknown");
-    }
+    if (line === null)
+      throw aborted ? new AttemptCancelled() : new Error("attempt outcome unknown");
 
     try {
       return JSON.parse(line) as Ack;
@@ -247,8 +232,9 @@ async function runAcked(): Promise<void> {
     );
     await batch.flush();
   } catch (error) {
-    // A complete after abort waits for an ack the parent will not send.
-    if (!(error instanceof AttemptCancelled) && !settled) {
+    // After an abort or an outcome ack the parent sends no more acks, so a
+    // complete here would wait forever.
+    if (!aborted && !settled) {
       try {
         await logs?.flush();
         await waitAck(attempt.complete(errorEvent(error)));

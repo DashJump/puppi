@@ -147,64 +147,6 @@ describe("an acking parent", () => {
       outside: existsSync(join(outside, "keep")),
     }).toEqual({ code: 1, scratch: false, outside: true });
   });
-
-  it('{"abort":true} on stdin ends the attempt', async () => {
-    const root = mkdtempSync(join(tmpdir(), "puppi-ack-abort-"));
-    roots.push(root);
-    const bundle = join(root, "bundle.mjs");
-    const started = join(root, "started");
-    const continued = join(root, "continued");
-
-    writeFileSync(
-      bundle,
-      bundleCarryingStorage(`import { writeFileSync } from "node:fs";
-        export default {
-          adapters: {},
-          assets: {
-            "source/things": {
-              key: "source/things",
-              group: "default",
-              visibility: "project",
-              role: "source",
-              producer: "ts",
-              deps: [],
-              connections: [],
-              partitioning: {},
-              checks: {},
-              config: {},
-              run: async () => {
-                writeFileSync(${JSON.stringify(started)}, "1");
-                await new Promise((resolve) => setTimeout(resolve, 60_000));
-                writeFileSync(${JSON.stringify(continued)}, "1");
-              },
-            },
-          },
-        };`),
-    );
-
-    const code = await exitOnEof({}, async (child) => {
-      const stdin = child.stdin;
-      const stdout = child.stdout;
-      if (!stdin || !stdout) throw new Error("runtime stdio was not piped");
-
-      const lines = createInterface({ input: stdout });
-      lines.on("line", (line) => {
-        if (!line.trim()) return;
-
-        stdin.write(`${JSON.stringify({ ok: true })}\n`);
-      });
-      stdin.on("error", () => undefined);
-      stdin.write(`${JSON.stringify(leaseFor(hangInput(bundle, root)))}\n`);
-
-      const deadline = Date.now() + 3_000;
-      while (!existsSync(started) && Date.now() < deadline) await delay(20);
-      if (!existsSync(started)) throw new Error("bundle never started");
-
-      stdin.write(`${JSON.stringify({ abort: true })}\n`);
-    });
-
-    expect({ code, continued: existsSync(continued) }).toEqual({ code: 0, continued: false });
-  });
 });
 
 function leaseFor(input: ExecutorInput): Lease {

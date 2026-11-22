@@ -29,10 +29,7 @@ const POLL_MS = 750;
  */
 const STILL_GOING = 3;
 
-/**
- * Exit code when `--wait` returns a cancelled run.
- * 1 means the run failed, so a cancel stays distinguishable from a bad run.
- */
+/** Exit code for a cancelled run, distinct from a failure (1). */
 const CANCELLED = 4;
 
 async function trigger(api: Api, environment: string, options: RunOptions): Promise<Run> {
@@ -294,19 +291,11 @@ export async function assets(api: Api, environment: string): Promise<Asset[]> {
   return api.get<Asset[]>(envPath(environment, "/assets"));
 }
 
-interface RunResult {
-  run: Run;
-  before: Asset[];
-  after: Asset[];
-  waited: boolean;
-  /** How to read this run later. Set when the summary table is not the result. */
-  follow?: string;
-  /** `--timeout` elapsed. The run itself has not failed. */
-  timedOut?: boolean;
-  message?: string;
-  /** `puppi run cancel` posted and the engine returned this run. */
-  cancelled?: boolean;
-}
+type RunResult =
+  | { kind: "queued"; run: Run; follow: string }
+  | { kind: "settled"; run: Run; before: Asset[]; after: Asset[] }
+  | { kind: "timedOut"; run: Run; follow: string; message: string }
+  | { kind: "cancelRequested"; run: Run; cancelRequested: boolean };
 
 /** `puppi run`: manual runs always execute the whole active graph. */
 async function runCommand(
@@ -319,7 +308,7 @@ async function runCommand(
   const queued = await trigger(api, environment, runOptions);
   const follow = followCommand(environment, queued.id);
 
-  if (!options.wait) return done({ run: queued, before, after: [], waited: false, follow });
+  if (!options.wait) return done({ kind: "queued", run: queued, follow });
 
   // Said before the poll: a run can take minutes, and this is the id to look up.
   if (!options.asJson) {
@@ -343,50 +332,38 @@ async function runCommand(
   if (waited.timedOut) {
     const message = `run ${waited.run.id} is still ${waited.run.status}. Follow it with \`${follow}\`.`;
 
-    return done(
-      {
-        run: waited.run,
-        before,
-        after: [],
-        waited: true,
-        timedOut: true,
-        follow,
-        message,
-      },
-      STILL_GOING,
-    );
+    return done({ kind: "timedOut", run: waited.run, follow, message }, STILL_GOING);
   }
 
   const settled = waited.run;
   const after = await assets(api, environment);
 
   return done(
-    { run: settled, before, after, waited: true },
+    { kind: "settled", run: settled, before, after },
     settled.status === "cancelled" ? CANCELLED : exitCode(settled, after),
   );
 }
 
 function renderRun(result: RunResult): void {
-  if (result.cancelled) {
-    note(`run ${result.run.id} ${result.run.status}`);
-    return;
+  switch (result.kind) {
+    case "cancelRequested": {
+      const pending = result.run.status === "cancelled" ? "" : ", cancel requested";
+      note(`run ${result.run.id} ${result.run.status}${pending}`);
+      return;
+    }
+    case "timedOut":
+      note(result.message);
+      return;
+    case "settled":
+      reportRun(result.run, result.after, result.before);
+      return;
+    case "queued":
+      note(
+        `run ${result.run.id} ${result.run.status}: ${counted(result.run.plan.length, "asset")} in plan`,
+      );
+      note(result.follow);
+      return;
   }
-
-  if (result.timedOut) {
-    note(result.message ?? "");
-    return;
-  }
-
-  if (result.waited) {
-    reportRun(result.run, result.after, result.before);
-    return;
-  }
-
-  note(
-    `run ${result.run.id} ${result.run.status}: ${counted(result.run.plan.length, "asset")} in plan`,
-  );
-
-  if (result.follow) note(result.follow);
 }
 
 interface StatusResult {
@@ -407,7 +384,10 @@ async function statusCommand(
 
   const after = await assets(api, environment);
 
-  return done({ environment, run: settled, assets: after }, exitCode(settled, after));
+  return done(
+    { environment, run: settled, assets: after },
+    settled.status === "cancelled" ? CANCELLED : exitCode(settled, after),
+  );
 }
 
 function renderStatus(result: StatusResult): void {
@@ -508,8 +488,9 @@ function manualRun(
     throw new UsageError("`puppi run --local` is gone. Run one producer with `puppi try <key>`.");
   }
 
-  if (args.positional[0] === "cancel")
-    return cancelRun(api, args.positional[1], args.positional.length);
+  const [word, ...rest] = args.positional;
+
+  if (word === "cancel") return cancelRun(api, args, rest);
 
   if (args.positional.length > 0 || has(args, "upstream") || has(args, "downstream")) {
     throw new UsageError(selectionError(args, names));
@@ -537,21 +518,26 @@ function manualRun(
 
 async function cancelRun(
   api: Api,
-  id: string | undefined,
-  count: number,
+  args: Args,
+  words: readonly string[],
 ): Promise<Outcome<RunResult>> {
-  if (!id || count > 2) {
+  if (has(args, "wait") || has(args, "force") || has(args, "timeout")) {
+    throw new UsageError(
+      "`puppi run cancel` takes a run id, not `--wait`, `--force`, or `--timeout`",
+    );
+  }
+
+  const [id, ...extra] = words;
+  if (!id || extra.length > 0) {
     throw new UsageError("puppi run cancel needs a run id: `puppi run cancel <run-id>`");
   }
 
   const current = await api.post<Run>(`/runs/${id}/cancel`);
 
   return done({
+    kind: "cancelRequested",
     run: current,
-    before: [],
-    after: [],
-    waited: false,
-    cancelled: true,
+    cancelRequested: current.status !== "cancelled",
   });
 }
 

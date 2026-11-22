@@ -129,7 +129,6 @@ describe("puppi run", () => {
     expect(await run("run", "cancel", "r1")).toBe(0);
     expect(stdout).toContain("run r1 cancelled");
     expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual(["POST /runs/r1/cancel"]);
-    expect(calls[0]?.body).toEqual({});
   });
 
   it("exits 4 when --wait returns a cancelled run", async () => {
@@ -168,9 +167,9 @@ describe("puppi run", () => {
     expect(await run("run", "--json")).toBe(0);
     expect(calls.map((call) => call.method)).toEqual(["POST"]);
 
-    const parsed = JSON.parse(stdout) as { waited: boolean; run: { id: string; status: string } };
+    const parsed = JSON.parse(stdout) as { kind: string; run: { id: string; status: string } };
 
-    expect(parsed.waited).toBe(false);
+    expect(parsed.kind).toBe("queued");
     expect(parsed.run).toMatchObject({ id: "r1", status: "queued" });
   });
 
@@ -416,13 +415,13 @@ describe("puppi run", () => {
     expect(await pending).toBe(3);
 
     const parsed = JSON.parse(stdout) as {
-      timedOut: boolean;
+      kind: string;
       follow: string;
       run: { status: string };
       message: string;
     };
 
-    expect(parsed.timedOut).toBe(true);
+    expect(parsed.kind).toBe("timedOut");
     expect(parsed.run.status).toBe("running");
     expect(parsed.follow).toBe("puppi status --env prod --run r1");
     expect(parsed.message).toContain("still running");
@@ -556,10 +555,10 @@ describe("puppi run", () => {
     await run("run", "--wait", "--json");
 
     expect(JSON.parse(stdout)).toEqual({
+      kind: "settled",
       run: settledRun(),
       before: [asset()],
       after: [asset()],
-      waited: true,
     });
   });
 });

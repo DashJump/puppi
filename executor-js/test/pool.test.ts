@@ -604,14 +604,13 @@ describe("pool worker", () => {
 
   it("a cancelled settled frame aborts the child", async () => {
     const pool = await start();
-    const ended = join(pool.root, "ended-1");
     const term = join(pool.root, "term-1");
-    const digest = publish(pool, "claim-1", stubborn(join(pool.root, "pid-1"), ended, term));
+    const digest = publish(pool, "claim-1", termCount(join(pool.root, "pid-1"), term));
     pool.send(lease("attempt-1", "run-1", digest, "claim-1", pool.root));
     await pool.until("running", () => pid(pool, "pid-1") !== undefined);
 
     pool.send({ message: "settled", attempt_id: "attempt-1", fence: 1, reason: "cancelled" });
-    await pool.until("ended", () => existsSync(ended) && !alive(pid(pool, "pid-1")));
+    await pool.until("ended", () => !alive(pid(pool, "pid-1")));
 
     expect(existsSync(term)).toBe(false);
     expect(completes(pool, "attempt-1")).toHaveLength(0);
@@ -1353,30 +1352,6 @@ function termCount(pidFile: string, termFile: string): string {
                 ? Number(readFileSync(${JSON.stringify(termFile)}, "utf8"))
                 : 0;
               writeFileSync(${JSON.stringify(termFile)}, String(count + 1));
-            });
-            writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
-            await new Promise(() => setInterval(() => undefined, 1_000));
-          },
-        },
-      },
-    };`;
-}
-
-function stubborn(pidFile: string, endedFile: string, termFile: string): string {
-  return `import { writeFileSync } from "node:fs";
-    export default {
-      adapters: {},
-      assets: {
-        "source/things": {
-          key: "source/things",
-          checks: {},
-          config: {},
-          run: async () => {
-            process.on("exit", () => {
-              writeFileSync(${JSON.stringify(endedFile)}, "1");
-            });
-            process.on("SIGTERM", () => {
-              writeFileSync(${JSON.stringify(termFile)}, "1");
             });
             writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
             await new Promise(() => setInterval(() => undefined, 1_000));

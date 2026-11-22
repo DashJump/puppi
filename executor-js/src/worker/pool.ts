@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   assertValidLease,
+  CANCEL_KILL_MS,
   type ExecutorEvent,
   type ExecutorInput,
   type Execution,
@@ -27,7 +28,6 @@ const WORKER_VERSION = "0.4";
 // The socket closes after 60s with no frame. This pulse is the keepalive.
 const PULSE_MS = 20_000;
 const SILENCE_MS = 60_000;
-const CANCEL_KILL_MS = 30_000;
 const STOP_KILL_MS = 5_000;
 const BACKOFF_BASE_MS = 200;
 const BACKOFF_CAP_MS = 30_000;
@@ -864,24 +864,26 @@ function stopAttempt(state: State, attempt: Attempt): void {
   });
 }
 
-function armStop(
-  child: ChildProcess | undefined,
-  reply: () => void,
-  killAfterMs = STOP_KILL_MS,
-): void {
-  if (!child || child.exitCode !== null || child.signalCode !== null) {
+function alive(child: ChildProcess): boolean {
+  return child.exitCode === null && child.signalCode === null;
+}
+
+function killAfter(child: ChildProcess, ms: number): void {
+  const timer = setTimeout(() => {
+    if (alive(child)) child.kill("SIGKILL");
+  }, ms);
+  child.once("exit", () => clearTimeout(timer));
+}
+
+function armStop(child: ChildProcess | undefined, reply: () => void): void {
+  if (!child || !alive(child)) {
     reply();
     return;
   }
 
   child.kill("SIGTERM");
-  const timer = setTimeout(() => {
-    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
-  }, killAfterMs);
-  child.once("exit", () => {
-    clearTimeout(timer);
-    reply();
-  });
+  killAfter(child, STOP_KILL_MS);
+  child.once("exit", reply);
 }
 
 function stoppedFrame(attemptId: string, fence: number, workerId: string) {
@@ -895,24 +897,24 @@ function stoppedFrame(attemptId: string, fence: number, workerId: string) {
 }
 
 function cancel(attempt: Attempt): void {
-  if (attempt.cancelled || attempt.lost || attempt.fenced) return;
-
   // The result is already at the engine, or its pages are dropping. Cancel
   // is not a reason to skip `{recorded}` or to interrupt that drop.
   if (attempt.awaiting || attempt.releasing) return;
 
+  abortChild(attempt);
+}
+
+function abortChild(attempt: Attempt): void {
+  if (attempt.cancelled || attempt.lost || attempt.fenced) return;
+
   attempt.cancelled = true;
+  attempt.awaiting = false;
   clearTimeout(attempt.silence);
   const child = attempt.child;
-  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  if (!child || !alive(child)) return;
 
-  const stdin = child.stdin;
-  if (stdin && !stdin.destroyed) stdin.write(`${JSON.stringify({ abort: true })}\n`);
-
-  const timer = setTimeout(() => {
-    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
-  }, CANCEL_KILL_MS);
-  child.once("exit", () => clearTimeout(timer));
+  writeAck(attempt, { abort: true });
+  killAfter(child, CANCEL_KILL_MS);
 }
 
 async function dropChildren(state: State): Promise<void> {
@@ -925,7 +927,7 @@ async function dropChildren(state: State): Promise<void> {
 
       const child = attempt.child;
 
-      if (child && child.exitCode === null && child.signalCode === null) {
+      if (child && alive(child)) {
         child.kill("SIGKILL");
         await new Promise<void>((resolveExit) => {
           child.once("exit", () => resolveExit());
@@ -1063,8 +1065,7 @@ function applySettled(attempt: Attempt, frame: Record<string, unknown>): void {
   if (attempt.lost || attempt.fenced || attempt.releasing) return;
 
   if (frame["reason"] === "cancelled") {
-    attempt.awaiting = false;
-    cancel(attempt);
+    abortChild(attempt);
     return;
   }
 
@@ -1128,7 +1129,7 @@ function stopFenced(attempt: Attempt): void {
   writeAck(attempt, { fenced: true });
 
   const child = attempt.child;
-  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  if (!child || !alive(child)) return;
 
   child.kill("SIGKILL");
 }
