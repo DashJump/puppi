@@ -8,6 +8,8 @@ import * as connector from "../src/index.js";
 import { Client } from "../src/index.js";
 import { operations } from "../src/operations.js";
 
+const { apiVersions, defaultApiVersion } = connector.default;
+
 const spec = JSON.parse(readFileSync(new URL("../openapi.json", import.meta.url), "utf8")) as {
   components: {
     securitySchemes: Record<string, { scheme?: string }>;
@@ -38,10 +40,9 @@ function body(schema: object, overrides: Record<string, unknown> = {}): Record<s
   return { ...(sampled as Record<string, unknown>), ...overrides };
 }
 
-const contactSchema = spec.components.schemas["contact"] as object;
-const listSchema = spec.paths["/objects/contacts"]?.get?.responses["200"]?.content[
-  "application/json"
-].schema as object;
+const contactSchema = spec.components.schemas["SimplePublicObjectWithAssociations"] as object;
+const listSchema = spec.paths["/contacts"]?.get?.responses["200"]?.content["application/json"]
+  .schema as object;
 
 function contact(overrides: Record<string, unknown> = {}) {
   return body(contactSchema, overrides);
@@ -51,7 +52,14 @@ function contactList(overrides: Record<string, unknown> = {}) {
   return body(listSchema, overrides);
 }
 
-function fake(routes: Record<string, unknown>) {
+function prefix(version: string): string {
+  if (version === "2026-09") return "/crm/objects/2026-09";
+  if (version === "v3") return "/crm/v3/objects";
+
+  throw new Error(`unexpected api_version ${version}`);
+}
+
+function fake(routes: Record<string, unknown>, config: Record<string, unknown> = {}) {
   const calls: { url: string; headers: Record<string, string> }[] = [];
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
@@ -67,7 +75,7 @@ function fake(routes: Record<string, unknown>) {
   }) as typeof fetch;
 
   const client = new Client(
-    { base_url: "https://hubspot.test" },
+    { base_url: "https://hubspot.test", ...config },
     { access_token: "pat-test" },
     { fetch: fetchImpl },
   );
@@ -89,47 +97,74 @@ describe("hubspot connector", () => {
 
   it("walks two pages, sending paging.next.after back as after", async () => {
     const token = "cursor-token";
-    const { calls, client } = fake({
-      "/crm/v3/objects/contacts": contactList({
-        results: [contact({ id: "1" })],
-        paging: { next: { after: token } },
-      }),
-      [`/crm/v3/objects/contacts?after=${token}`]: contactList({
-        results: [contact({ id: "2" })],
-        paging: {},
-      }),
-    });
+    const shapes = [
+      { config: {}, prefix: prefix(defaultApiVersion) },
+      ...apiVersions.map((api_version) => ({
+        config: { api_version },
+        prefix: prefix(api_version),
+      })),
+    ];
 
-    const seen: { cursor: string | number | null; ids: string[] }[] = [];
+    for (const shape of shapes) {
+      const { calls, client } = fake(
+        {
+          [`${shape.prefix}/contacts`]: contactList({
+            results: [contact({ id: "1" })],
+            paging: { next: { after: token } },
+          }),
+          [`${shape.prefix}/contacts?after=${token}`]: contactList({
+            results: [contact({ id: "2" })],
+            paging: {},
+          }),
+        },
+        shape.config,
+      );
 
-    for await (const page of client.contacts()) {
-      seen.push({
-        cursor: page.cursor,
-        ids: page.data.map((row) => row.id),
-      });
+      const seen: { cursor: string | number | null; ids: string[] }[] = [];
+
+      for await (const page of client.contacts()) {
+        seen.push({
+          cursor: page.cursor,
+          ids: page.data.map((row) => row.id),
+        });
+      }
+
+      expect(seen).toEqual([
+        { cursor: token, ids: ["1"] },
+        { cursor: null, ids: ["2"] },
+      ]);
+      expect(calls[1]?.url).toContain(`after=${token}`);
+      expect(calls.map((call) => call.url)).toEqual([
+        `https://hubspot.test${shape.prefix}/contacts`,
+        `https://hubspot.test${shape.prefix}/contacts?after=${token}`,
+      ]);
     }
-
-    expect(seen).toEqual([
-      { cursor: token, ids: ["1"] },
-      { cursor: null, ids: ["2"] },
-    ]);
-    expect(calls[1]?.url).toContain(`after=${token}`);
-    expect(calls.map((call) => call.url)).toEqual([
-      "https://hubspot.test/crm/v3/objects/contacts",
-      `https://hubspot.test/crm/v3/objects/contacts?after=${token}`,
-    ]);
   });
 
   it("proves the token with a one-row list", async () => {
-    const { calls, client } = fake({
-      "/crm/v3/objects/contacts?limit=1": contactList({
-        results: [contact({ id: "1" })],
-        paging: {},
-      }),
-    });
+    const shapes = [
+      { config: {}, prefix: prefix(defaultApiVersion) },
+      ...apiVersions.map((api_version) => ({
+        config: { api_version },
+        prefix: prefix(api_version),
+      })),
+    ];
 
-    expect(await client.check()).toEqual({ ok: true });
-    expect(calls[0]?.url).toBe("https://hubspot.test/crm/v3/objects/contacts?limit=1");
-    expect(calls[0]?.headers["authorization"]).toBe("Bearer pat-test");
+    for (const shape of shapes) {
+      const { calls, client } = fake(
+        {
+          [`${shape.prefix}/contacts?limit=1`]: contactList({
+            results: [contact({ id: "1" })],
+            paging: {},
+          }),
+        },
+        shape.config,
+      );
+
+      expect(await client.check()).toEqual({ ok: true });
+      expect(calls[0]?.url).toBe(`https://hubspot.test${shape.prefix}/contacts?limit=1`);
+      expect(calls[0]?.headers["authorization"]).toBe("Bearer pat-test");
+      expect(calls[0]?.url).not.toContain("pat-test");
+    }
   });
 });

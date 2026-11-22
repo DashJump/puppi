@@ -4,7 +4,7 @@
  */
 
 export type paths = {
-  "/objects/contacts": {
+  "/contacts": {
     parameters: {
       query?: never;
       header?: never;
@@ -12,30 +12,10 @@ export type paths = {
       cookie?: never;
     };
     /**
-     * List contacts
-     * @description Returns a page of CRM contacts. The following page is `after` set to `paging.next.after`.
+     * Retrieve contacts
+     * @description Retrieve all contacts, using query parameters to specify the information that gets returned.
      */
-    get: operations["listContacts"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/objects/contacts/{contactId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Retrieve a contact
-     * @description Returns one contact.
-     */
-    get: operations["getContact"];
+    get: operations["get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}"];
     put?: never;
     post?: never;
     delete?: never;
@@ -48,31 +28,232 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
-    contact: {
-      /** @description The contact's unique ID. */
+    /** @description Represents a paginated collection response that includes simple public objects with their associations. This component is used to handle the results and pagination details when retrieving a list of objects from the API. */
+    CollectionResponseSimplePublicObjectWithAssociationsForwardPaging: {
+      paging?: components["schemas"]["ForwardPaging"];
+      /** @description An array of SimplePublicObjectWithAssociations, each representing a CRM object with its associated data. */
+      results: components["schemas"]["SimplePublicObjectWithAssociations"][];
+    };
+    /** @description Paging information for forward-only pagination. Contains the next page reference when more results are available; omitted or empty on the last page. */
+    ForwardPaging: {
+      next?: components["schemas"]["NextPage"];
+    };
+    /** @description Represents a CRM object along with its properties, timestamps, and a set of associated object IDs grouped by association type. */
+    SimplePublicObjectWithAssociations: {
+      /** @description A boolean indicating whether this object has been archived. */
+      archived: boolean;
+      /**
+       * Format: date-time
+       * @description The date and time when this object was archived, in ISO 8601 format.
+       */
+      archivedAt?: string;
+      /** @description A map of associated object types to their respective associated IDs. */
+      associations?: {
+        [key: string]: components["schemas"]["CollectionResponseAssociatedId"];
+      };
+      /**
+       * Format: date-time
+       * @description The date and time when this object was created, in ISO 8601 format.
+       */
+      createdAt: string;
+      /** @description The unique identifier for this object. */
       id: string;
-      /** @description Contact property values. */
+      /** @description An identifier used for tracing the write operations on this object. */
+      objectWriteTraceId?: string;
+      /** @description A map of property names to their current values for this object. */
       properties: {
         [key: string]: string;
       };
+      /** @description A map of property names to their values along with a history of changes, including timestamps. */
+      propertiesWithHistory?: {
+        [key: string]: components["schemas"]["ValueWithTimestamp"][];
+      };
+      /**
+       * Format: date-time
+       * @description The date and time when this object was last updated, in ISO 8601 format.
+       */
+      updatedAt: string;
+      /** @description The URL link to access this object. */
+      url?: string;
+      /** @description A list of warnings associated with this object, each containing a category, message, and context. */
+      warnings?: components["schemas"]["PublicObjectWarning"][];
+    };
+    /**
+     * @description Represents an error response returned by the API when an operation fails. This component is used in various endpoints to provide detailed information about the error encountered.
+     * @example {
+     *       "message": "Invalid input (details will vary based on the error)",
+     *       "correlationId": "aeb5f871-7f07-4993-9211-075dc63e7cbf",
+     *       "category": "VALIDATION_ERROR",
+     *       "links": {
+     *         "knowledge-base": "https://www.hubspot.com/products/service/knowledge-base"
+     *       }
+     *     }
+     */
+    Error: {
+      /** @description The error category */
+      category: string;
+      /**
+       * @description Context about the error condition
+       * @example {invalidPropertyName=[propertyValue], missingScopes=[scope1, scope2]}
+       */
+      context?: {
+        [key: string]: string[];
+      };
+      /**
+       * Format: uuid
+       * @description A unique identifier for the request. Include this value with any error reports or support tickets
+       * @example aeb5f871-7f07-4993-9211-075dc63e7cbf
+       */
+      correlationId: string;
+      /** @description further information about the error */
+      errors?: components["schemas"]["ErrorDetail"][];
+      /** @description A map of link names to associated URIs containing documentation about the error or recommended remediation steps */
+      links?: {
+        [key: string]: string;
+      };
+      /**
+       * @description A human readable message describing the error along with remediation steps where appropriate
+       * @example An error occurred
+       */
+      message: string;
+      /** @description A specific category that contains more specific detail about the error */
+      subCategory?: string;
+    };
+    /** @description Specifies the paging information needed to retrieve the next set of results in a paginated API response */
+    NextPage: {
+      /** @description A string token that indicates the position after the last item on the current page. This token is used to fetch the next set of results. */
+      after: string;
+      /** @description A string URL that provides a direct link to the next page of results. */
+      link?: string;
+    };
+    /** @description Represents a collection of associated IDs returned by an API request, including pagination details for navigating through the results. */
+    CollectionResponseAssociatedId: {
+      paging?: components["schemas"]["Paging"];
+      /** @description An array of associated IDs, where each item represents an associated object. The array contains objects of type 'AssociatedId'. */
+      results: components["schemas"]["AssociatedId"][];
+    };
+    /** @description Property model that includes timestamp. */
+    ValueWithTimestamp: {
+      /** @description A string identifier for the specific source of the value. */
+      sourceId?: string;
+      /** @description A string label that provides a human-readable name for the source. */
+      sourceLabel?: string;
+      /** @description A string indicating the type of source from which the value originated. */
+      sourceType: string;
+      /**
+       * Format: date-time
+       * @description The date and time when the value was recorded, in ISO 8601 format.
+       */
+      timestamp: string;
+      /**
+       * Format: int32
+       * @description An integer representing the ID of the user who last updated the value.
+       */
+      updatedByUserId?: number;
+      /** @description The actual value being recorded. It is a string. */
+      value: string;
+    };
+    /** @description Represents a warning message related to a public object in HubSpot, providing details about the nature and context of the warning. */
+    PublicObjectWarning: {
+      /** @description A string representing the category of the warning. */
+      category: string;
+      /** @description An object providing additional context for the warning, with string values for each context key. */
+      context: {
+        [key: string]: string;
+      };
+      /** @description A string containing the warning message. */
+      message: string;
+    };
+    /** @description Represents detailed information about an error that occurred in the API. This component is used to provide additional context and specifics about errors, typically as part of an error response. */
+    ErrorDetail: {
+      /** @description The status code associated with the error detail */
+      code?: string;
+      /**
+       * @description Context about the error condition
+       * @example {missingScopes=[scope1, scope2]}
+       */
+      context?: {
+        [key: string]: string[];
+      };
+      /** @description The name of the field or parameter in which the error was found. */
+      in?: string;
+      /** @description A human readable message describing the error along with remediation steps where appropriate */
+      message: string;
+      /** @description A specific category that contains more specific detail about the error */
+      subCategory?: string;
+    };
+    /** @description Represents the pagination information for navigating through a list of results in the API. It provides details on how to access the previous or next set of results. */
+    Paging: {
+      next?: components["schemas"]["NextPage"];
+      prev?: components["schemas"]["PreviousPage"];
+    };
+    /** @description Contains the id and type of an association */
+    AssociatedId: {
+      /** @description The unique identifier for the associated object. This is a string value. */
+      id: string;
+      /**
+       * @description The type of association between the objects. This is a string value.
+       * @example deal_to_contact
+       */
+      type: string;
+    };
+    /** @description specifies the paging information needed to retrieve the previous set of results in a paginated API response */
+    PreviousPage: {
+      /** @description A string token used to identify the position before the current page in a paginated list. */
+      before: string;
+      /** @description A string URL that provides a direct link to the previous page of results. */
+      link?: string;
     };
   };
-  responses: never;
+  responses: {
+    /** @description An error occurred. */
+    Error: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "*/*": components["schemas"]["Error"];
+      };
+    };
+  };
   parameters: never;
   requestBodies: never;
   headers: never;
   pathItems: never;
 };
-export type SchemaContact = components["schemas"]["contact"];
+export type SchemaCollectionResponseSimplePublicObjectWithAssociationsForwardPaging =
+  components["schemas"]["CollectionResponseSimplePublicObjectWithAssociationsForwardPaging"];
+export type SchemaForwardPaging = components["schemas"]["ForwardPaging"];
+export type SchemaSimplePublicObjectWithAssociations =
+  components["schemas"]["SimplePublicObjectWithAssociations"];
+export type SchemaError = components["schemas"]["Error"];
+export type SchemaNextPage = components["schemas"]["NextPage"];
+export type SchemaCollectionResponseAssociatedId =
+  components["schemas"]["CollectionResponseAssociatedId"];
+export type SchemaValueWithTimestamp = components["schemas"]["ValueWithTimestamp"];
+export type SchemaPublicObjectWarning = components["schemas"]["PublicObjectWarning"];
+export type SchemaErrorDetail = components["schemas"]["ErrorDetail"];
+export type SchemaPaging = components["schemas"]["Paging"];
+export type SchemaAssociatedId = components["schemas"]["AssociatedId"];
+export type SchemaPreviousPage = components["schemas"]["PreviousPage"];
+export type ResponseError = components["responses"]["Error"];
 export type $defs = Record<string, never>;
 export interface operations {
-  listContacts: {
+  "get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}": {
     parameters: {
       query?: {
-        /** @description Maximum number of contacts to return. */
-        limit?: number;
-        /** @description Paging cursor from `paging.next.after` of the previous page. */
+        /** @description The paging cursor token of the last successfully read resource will be returned as the `paging.next.after` JSON property of a paged response containing more results. */
         after?: string;
+        /** @description Whether to return only results that have been archived. */
+        archived?: boolean;
+        /** @description A comma separated list of object types to retrieve associated IDs for. If any of the specified associations do not exist, they will be ignored. */
+        associations?: string[];
+        /** @description The maximum number of results to display per page. */
+        limit?: number;
+        /** @description A comma separated list of the properties to be returned in the response. If any of the specified properties are not present on the requested object(s), they will be ignored. */
+        properties?: string[];
+        /** @description A comma separated list of the properties to be returned along with their history of previous values. If any of the specified properties are not present on the requested object(s), they will be ignored. Usage of this parameter will reduce the maximum number of contacts that can be read by a single request. */
+        propertiesWithHistory?: string[];
       };
       header?: never;
       path?: never;
@@ -80,44 +261,16 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description A page of contacts. */
+      /** @description successful operation */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            results: components["schemas"]["contact"][];
-            paging?: {
-              next?: {
-                after?: string;
-              };
-            };
-          };
+          "application/json": components["schemas"]["CollectionResponseSimplePublicObjectWithAssociationsForwardPaging"];
         };
       };
-    };
-  };
-  getContact: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        contactId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description One contact. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["contact"];
-        };
-      };
+      default: components["responses"]["Error"];
     };
   };
 }
