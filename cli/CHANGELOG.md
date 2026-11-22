@@ -1,5 +1,16 @@
 # @puppi/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- 0b4aea4: `puppi run cancel <run-id>` cancels a queued or running run. `puppi run --wait`, `puppi status`, and `puppi rollback` exit 4 when the run is cancelled.
+
+### Patch Changes
+
+- Updated dependencies [0b4aea4]
+  - @puppi/executor-js@0.2.0
+
 ## 0.2.2
 
 ### Patch Changes
