@@ -53,7 +53,7 @@ puppi rollback core/customer --env prod --to <materialization-id>
 
 `puppi run cancel <run-id>` cancels a queued or running run and prints `run <run-id> <status>`. A queued run is `cancelled` at once. A running run gets 30 seconds to stop, and the command prints `run <run-id> running, cancel requested`. Running the cancel again while it stops exits 0. Cancelling a run that already finished exits 1.
 
-`puppi run --wait` and `puppi status` exit 4 when the run is `cancelled`.
+`puppi run --wait`, `puppi status`, and `puppi rollback` exit 4 when the run is `cancelled`.
 
 ## Build
 

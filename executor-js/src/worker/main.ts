@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   process.exit(process.exitCode ?? 0);
 }
 
-async function runLease(lease: Lease, scratch: string): Promise<Stop | null> {
+async function runLease(lease: Lease, scratch: string): Promise<void> {
   // `os.tmpdir()` follows TMPDIR, so the download and the attempt's temp files
   // share this directory. A fence or a failed import still takes main's finally.
   process.env["TMPDIR"] = scratch;
@@ -186,8 +186,6 @@ async function runLease(lease: Lease, scratch: string): Promise<Stop | null> {
     clearTimeout(killTimer);
     if (graceWon) void finished.catch(() => undefined);
   }
-
-  return stop;
 }
 
 function machineId(): string {
