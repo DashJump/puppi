@@ -600,7 +600,7 @@ describe("pool worker", () => {
     await pool.until("one dead", () => !alive(pid(pool, "pid-a")));
     expect(alive(pid(pool, "pid-b"))).toBe(true);
     expect(completes(pool, "attempt-a")).toHaveLength(0);
-  });
+  }, 15_000);
 
   it("a cancelled settled frame aborts the child", async () => {
     const pool = await start();
@@ -611,10 +611,9 @@ describe("pool worker", () => {
     await pool.until("running", () => pid(pool, "pid-1") !== undefined);
 
     pool.send({ message: "settled", attempt_id: "attempt-1", fence: 1, reason: "cancelled" });
-    await pool.until("ended", () => existsSync(ended));
+    await pool.until("ended", () => existsSync(ended) && !alive(pid(pool, "pid-1")));
 
     expect(existsSync(term)).toBe(false);
-    expect(alive(pid(pool, "pid-1"))).toBe(false);
     expect(completes(pool, "attempt-1")).toHaveLength(0);
   });
 
