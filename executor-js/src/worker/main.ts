@@ -256,12 +256,9 @@ async function send(url: string, body: unknown): Promise<Response> {
 }
 
 async function conflict(url: string, response: Response): Promise<Error> {
-  const body = (await response.json().catch(() => null)) as {
-    error?: unknown;
-    reason?: unknown;
-  } | null;
+  const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
 
-  if (body?.reason === "cancelled" || body?.error === "cancelled") return new AttemptCancelled();
+  if (body?.error === "cancelled") return new AttemptCancelled();
   if (body?.error === "stale_fence") return new Fenced();
 
   return statusError(`${url} rejected delivery with ${response.status}`, response.status);
