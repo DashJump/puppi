@@ -110,7 +110,10 @@ export async function runSourceConformance(
     ),
   );
   checks.push(
-    await run("no spec path contains the default API version", () => versionedPaths(source)),
+    await run(
+      "a non-default API version is a path segment of the request, and the default is not",
+      () => versionedRequest(source),
+    ),
   );
   checks.push(
     await run("operations.ts is what generate writes from openapi.json", async () => {
@@ -233,22 +236,39 @@ class Server {
 }
 
 /**
- * A path segment equal to `defaultApiVersion` is the version baked into the
- * spec. `requireApiVersion` can still return another listed version, and the
- * request path will not change. The version belongs on the base URL (or in a
- * header). Segment equality, so `v1` does not match `v10`.
+ * A non-default `api_version` has to be its own segment of the request
+ * path, and the default version must not be. Reading the operation path
+ * cannot show that: the client may replace a version baked into it.
+ * Segment equality, so `v1` does not match `v10`. One listed version has
+ * no other request to make.
  */
-async function versionedPaths(source: Source): Promise<void> {
-  const version = source.connector.defaultApiVersion;
-  const pinned = Object.keys(source.spec.paths ?? {}).filter((path) =>
-    path.split("/").includes(version),
-  );
+async function versionedRequest(source: Source): Promise<void> {
+  const { apiVersions: versions, defaultApiVersion: fallback } = source.connector;
 
-  if (pinned.length === 0) return;
+  for (const version of versions) {
+    if (version === fallback) continue;
 
-  throw new Error(
-    `path ${pinned.join(", ")} contains defaultApiVersion ${JSON.stringify(version)}; put that version on the base URL`,
-  );
+    const server = new Server(() => ({ body: {} }));
+    const client = source.client(server, { api_version: version });
+
+    try {
+      await client.check();
+    } catch (error: unknown) {
+      if (server.calls.length === 0) throw error;
+    }
+
+    const url = server.calls[0]?.url;
+
+    if (!url) throw new Error(`api_version ${JSON.stringify(version)} made no request`);
+
+    const segments = new Set(new URL(url).pathname.split("/").filter((segment) => segment !== ""));
+
+    if (!segments.has(version) || segments.has(fallback)) {
+      throw new Error(
+        `api_version ${JSON.stringify(version)} requested ${url}; that path must contain ${JSON.stringify(version)} and not defaultApiVersion ${JSON.stringify(fallback)}`,
+      );
+    }
+  }
 }
 
 async function apiVersions(source: Source): Promise<void> {

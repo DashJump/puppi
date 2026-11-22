@@ -26,8 +26,6 @@ interface Lies {
   swallowsRefusals?: boolean;
   /** Builds a client for any `api_version`. */
   anyVersion?: boolean;
-  /** Pins `defaultApiVersion` as a path segment. */
-  versionInPath?: boolean;
 }
 
 const spec = {
@@ -69,11 +67,8 @@ const spec = {
 
 const operations = classifyOperations(spec);
 
-/** Same document, with `v1` baked into the only path. */
-const versionedSpec = {
-  ...spec,
-  paths: { "/v1/items": spec.paths["/items"] },
-};
+const VERSION_PATH =
+  "a non-default API version is a path segment of the request, and the default is not";
 
 function root(name = "@puppi/adapter-example", document: unknown = spec): URL {
   const dir = mkdtempSync(join(tmpdir(), "source-conformance-"));
@@ -86,7 +81,6 @@ function root(name = "@puppi/adapter-example", document: unknown = spec): URL {
 
 function connector(lies: Lies = {}): SourceConnector {
   const configSchema = { base_url: "string" };
-  const table = lies.versionInPath ? classifyOperations(versionedSpec) : operations;
 
   class Client extends OpenApiClient {
     constructor(
@@ -106,7 +100,7 @@ function connector(lies: Lies = {}): SourceConnector {
           baseUrl: "https://api.test",
           headers: authHeaders({ scheme: "bearer", token: key }),
         },
-        { operations: table },
+        { operations },
       );
       this.key = key;
     }
@@ -117,7 +111,7 @@ function connector(lies: Lies = {}): SourceConnector {
       if (lies.secretInUrl) return this.checkGet(`/items?limit=1&key=${this.key}`, "api_key");
       if (lies.swallowsRefusals) return Promise.resolve({ ok: true } as const);
 
-      return this.prove(lies.versionInPath ? "/v1/items?limit=1" : "/items?limit=1", "api_key");
+      return this.prove("/items?limit=1", "api_key");
     }
   }
 
@@ -137,18 +131,57 @@ function connector(lies: Lies = {}): SourceConnector {
 
 async function failures(
   source: SourceConnector,
-  options: { name?: string; drift?: boolean; versionInPath?: boolean } = {},
+  options: { name?: string; drift?: boolean } = {},
 ): Promise<string[]> {
-  const document = options.versionInPath ? versionedSpec : spec;
-  const table = options.versionInPath ? classifyOperations(versionedSpec) : operations;
   const checks = await runSourceConformance({
     connector: source,
-    operations: options.drift ? {} : table,
-    root: root(options.name, document),
+    operations: options.drift ? {} : operations,
+    root: root(options.name),
     config: { base_url: "https://api.test" },
   });
 
   return checks.filter((check) => check.status === "failed").map((check) => check.name);
+}
+
+function versionedClient(
+  pathFor: (version: string) => string,
+  versions: readonly string[] = ["v1", "v2"],
+): SourceConnector {
+  const source = connector();
+
+  class Client extends OpenApiClient {
+    private readonly version: string;
+
+    constructor(
+      config: Record<string, unknown>,
+      secrets: Record<string, string> = {},
+      options: ClientOptions = {},
+    ) {
+      const version = requireApiVersion("example", config, versions, "v1");
+
+      super(
+        config,
+        options,
+        {
+          api: "example",
+          baseUrl: "https://api.test",
+          headers: authHeaders({ scheme: "bearer", token: secrets["api_key"] ?? "" }),
+        },
+        { operations },
+      );
+      this.version = version;
+    }
+
+    override check() {
+      return this.prove(pathFor(this.version), "api_key");
+    }
+  }
+
+  return {
+    ...source,
+    default: { ...source.default, apiVersions: versions, defaultApiVersion: "v1" },
+    Client,
+  };
 }
 
 describe("runSourceConformance", () => {
@@ -165,7 +198,7 @@ describe("runSourceConformance", () => {
       ["passed", "the package is @puppi/adapter-example"],
       ["passed", "secretFields names what auth reads"],
       ["passed", "the default API version is listed, and any other fails construction"],
-      ["passed", "no spec path contains the default API version"],
+      ["passed", VERSION_PATH],
       ["passed", "operations.ts is what generate writes from openapi.json"],
       ["passed", "check passes on a 200 from its operation"],
       ["passed", "the credential is a header from the secrets argument, never the URL"],
@@ -209,49 +242,24 @@ describe("runSourceConformance", () => {
     ]);
   });
 
-  it("names a spec path that contains the default API version", async () => {
-    expect(await failures(connector({ versionInPath: true }), { versionInPath: true })).toEqual([
-      "no spec path contains the default API version",
+  it("names a client that keeps the default API version in the request path", async () => {
+    expect(await failures(versionedClient(() => "/v1/items?limit=1"))).toEqual([VERSION_PATH]);
+  });
+
+  it("names a request that keeps the default API version next to the selected one", async () => {
+    expect(await failures(versionedClient((version) => `/${version}/v1/items?limit=1`))).toEqual([
+      VERSION_PATH,
     ]);
   });
 
   it("passes a longer segment that only starts with the default API version", async () => {
-    const document = { ...spec, paths: { "/v10/items": spec.paths["/items"] } };
-    const table = classifyOperations(document);
+    expect(
+      await failures(versionedClient((version) => `/${version}/items?limit=1`, ["v1", "v10"])),
+    ).toEqual([]);
+  });
 
-    class Client extends OpenApiClient {
-      constructor(
-        config: Record<string, unknown>,
-        secrets: Record<string, string> = {},
-        options: ClientOptions = {},
-      ) {
-        requireApiVersion("example", config, ["v1"], "v1");
-
-        super(
-          config,
-          options,
-          {
-            api: "example",
-            baseUrl: "https://api.test",
-            headers: authHeaders({ scheme: "bearer", token: secrets["api_key"] ?? "" }),
-          },
-          { operations: table },
-        );
-      }
-
-      override check() {
-        return this.prove("/v10/items?limit=1", "api_key");
-      }
-    }
-
-    const checks = await runSourceConformance({
-      connector: { ...connector(), Client },
-      operations: table,
-      root: root("@puppi/adapter-example", document),
-      config: { base_url: "https://api.test" },
-    });
-
-    expect(checks.filter((check) => check.status === "failed")).toEqual([]);
+  it("names a longer segment that only starts with the selected API version", async () => {
+    expect(await failures(versionedClient(() => "/v20/items?limit=1"))).toEqual([VERSION_PATH]);
   });
 
   it("names a client that accepts an API version it does not list", async () => {
