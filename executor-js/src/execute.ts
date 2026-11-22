@@ -107,7 +107,6 @@ export async function execute(
     try {
       await produce(declaration, shim, adapter);
     } catch (error) {
-      if (error instanceof AttemptCancelled) throw error;
       if (isUnchanged(error) || shim.unchangedSignaled) throw error;
       if (!(await shim.dropExpiredPageToken(error))) throw error;
 

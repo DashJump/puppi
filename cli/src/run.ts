@@ -291,48 +291,17 @@ export async function assets(api: Api, environment: string): Promise<Asset[]> {
   return api.get<Asset[]>(envPath(environment, "/assets"));
 }
 
-type RunState =
-  | { kind: "queued"; run: Run; follow: string }
-  | { kind: "settled"; run: Run; before: Asset[]; after: Asset[] }
-  | { kind: "timedOut"; run: Run; before: Asset[]; follow: string; message: string }
-  | { kind: "cancelRequested"; run: Run; cancelRequested: boolean };
-
 interface RunResult {
   run: Run;
   before: Asset[];
   after: Asset[];
   waited: boolean;
+  /** How to read this run later. Set when the summary table is not the result. */
   follow?: string;
+  /** `--timeout` elapsed. The run itself has not failed. */
   timedOut?: boolean;
   message?: string;
   cancelRequested?: boolean;
-}
-
-function publish(result: RunState): RunResult {
-  switch (result.kind) {
-    case "queued":
-      return { run: result.run, before: [], after: [], waited: false, follow: result.follow };
-    case "settled":
-      return { run: result.run, before: result.before, after: result.after, waited: true };
-    case "timedOut":
-      return {
-        run: result.run,
-        before: result.before,
-        after: [],
-        waited: true,
-        timedOut: true,
-        follow: result.follow,
-        message: result.message,
-      };
-    case "cancelRequested":
-      return {
-        run: result.run,
-        before: [],
-        after: [],
-        waited: false,
-        cancelRequested: result.cancelRequested,
-      };
-  }
 }
 
 /** `puppi run`: manual runs always execute the whole active graph. */
@@ -346,7 +315,7 @@ async function runCommand(
   const queued = await trigger(api, environment, runOptions);
   const follow = followCommand(environment, queued.id);
 
-  if (!options.wait) return done(publish({ kind: "queued", run: queued, follow }));
+  if (!options.wait) return done({ run: queued, before, after: [], waited: false, follow });
 
   // Said before the poll: a run can take minutes, and this is the id to look up.
   if (!options.asJson) {
@@ -371,7 +340,15 @@ async function runCommand(
     const message = `run ${waited.run.id} is still ${waited.run.status}. Follow it with \`${follow}\`.`;
 
     return done(
-      publish({ kind: "timedOut", run: waited.run, before, follow, message }),
+      {
+        run: waited.run,
+        before,
+        after: [],
+        waited: true,
+        timedOut: true,
+        follow,
+        message,
+      },
       STILL_GOING,
     );
   }
@@ -379,7 +356,7 @@ async function runCommand(
   const settled = waited.run;
   const after = await assets(api, environment);
 
-  return done(publish({ kind: "settled", run: settled, before, after }), exitCode(settled, after));
+  return done({ run: settled, before, after, waited: true }, exitCode(settled, after));
 }
 
 function renderRun(result: RunResult): void {
@@ -571,13 +548,13 @@ async function cancelRun(
 
   const current = await api.post<Run>(`/runs/${id}/cancel`);
 
-  return done(
-    publish({
-      kind: "cancelRequested",
-      run: current,
-      cancelRequested: current.status !== "cancelled",
-    }),
-  );
+  return done({
+    run: current,
+    before: [],
+    after: [],
+    waited: false,
+    cancelRequested: current.status !== "cancelled",
+  });
 }
 
 /** Seconds. Omitted means wait until the run settles. */

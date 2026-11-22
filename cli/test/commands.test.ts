@@ -117,14 +117,16 @@ function line(message: string) {
 }
 
 describe("puppi run", () => {
+  it("needs a run id to cancel", async () => {
+    expect(await run("run", "cancel")).toBe(2);
+    expect(stderr).toContain("puppi run cancel <run-id>");
+    expect(calls).toEqual([]);
+  });
+
   it.each([
     ["queued", "cancelled", "run r1 cancelled", false],
     ["running", "running", "run r1 running, cancel requested", true],
   ] as const)("cancels a %s run", async (_label, status, printed, cancelRequested) => {
-    expect(await run("run", "cancel")).toBe(2);
-    expect(stderr).toContain("puppi run cancel <run-id>");
-    expect(calls).toEqual([]);
-
     engine({
       "POST /runs/r1/cancel": settledRun({ status }),
     });
