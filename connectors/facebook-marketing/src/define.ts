@@ -6,7 +6,7 @@ export default defineConnector({
   configSchema: { ad_account_id: "string", base_url: "string", api_version: "string" },
   secretFields: ["access_token"],
   auth: { scheme: "bearer", secret: "access_token" },
-  apiVersions: ["v25.0", "v26.0"],
-  defaultApiVersion: "v26.0",
+  apiVersions: ["v25.0", "v26.0", "v27.0"],
+  defaultApiVersion: "v27.0",
   defaultBaseUrl: "https://graph.facebook.com",
 });

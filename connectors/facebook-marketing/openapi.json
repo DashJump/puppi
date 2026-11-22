@@ -2,10 +2,10 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Facebook Marketing API campaigns",
-    "version": "v21.0",
-    "description": "Trimmed from the Marketing API ad account and ad account campaigns reference. The version is a prefix of the base URL (/<version>), not a path in this document. The ad account id is a path parameter, filled by the client from config. A campaign edge returns only id unless fields is set, so the list always asks for id, name, status, and updated_time."
+    "version": "v27.0",
+    "description": "GET /{account} and GET /{account}/campaigns for Marketing API v27.0. Meta publishes no OpenAPI document for this version; https://github.com/facebook/openapi contains the WhatsApp Business API only. Fields and parameters are taken from the Graph API Reference v27.0 ad account (https://developers.facebook.com/docs/graph-api/reference/ad-account/) and the ad account campaigns edge (https://developers.facebook.com/docs/marketing-api/reference/ad-account/campaigns/). The campaign schema keeps id, name, status, and updated_time. The version is a prefix of the base URL (/<version>), not a path in this document. A campaign edge returns only id unless fields is set."
   },
-  "servers": [{ "url": "https://graph.facebook.com/v21.0" }],
+  "servers": [{ "url": "https://graph.facebook.com/v27.0" }],
   "components": {
     "securitySchemes": {
       "bearerAuth": {

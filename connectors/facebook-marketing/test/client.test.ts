@@ -88,14 +88,14 @@ describe("facebook-marketing connector", () => {
 
   it("walks cursor pages while paging.next is present", async () => {
     const { calls, client } = fake({
-      [`/v26.0/act_123/campaigns?${FIELDS}`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}`]: campaigns({
         data: [campaign({ id: "1" })],
         paging: {
           cursors: { after: "abc" },
-          next: "https://graph.facebook.test/v26.0/act_123/campaigns?after=abc&access_token=EAA-test-token",
+          next: "https://graph.facebook.test/v27.0/act_123/campaigns?after=abc&access_token=EAA-test-token",
         },
       }),
-      [`/v26.0/act_123/campaigns?${FIELDS}&after=abc`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}&after=abc`]: campaigns({
         data: [campaign({ id: "2", name: "Summer", status: "PAUSED" })],
         paging: { cursors: { after: "def" } },
       }),
@@ -117,8 +117,8 @@ describe("facebook-marketing connector", () => {
     expect(calls[1]?.url).toContain("after=abc");
     expect(calls[1]?.url).toContain("act_123");
     expect(calls.map((call) => call.url)).toEqual([
-      `https://graph.facebook.test/v26.0/act_123/campaigns?${FIELDS}`,
-      `https://graph.facebook.test/v26.0/act_123/campaigns?${FIELDS}&after=abc`,
+      `https://graph.facebook.test/v27.0/act_123/campaigns?${FIELDS}`,
+      `https://graph.facebook.test/v27.0/act_123/campaigns?${FIELDS}&after=abc`,
     ]);
     expect(calls[1]?.url).not.toContain("access_token");
 
@@ -131,11 +131,11 @@ describe("facebook-marketing connector", () => {
 
   it("stops on a last page that still carries cursors.after", async () => {
     const { calls, client } = fake({
-      [`/v26.0/act_123/campaigns?${FIELDS}`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}`]: campaigns({
         data: [campaign({ id: "1" })],
         paging: { cursors: { after: "still-there" } },
       }),
-      [`/v26.0/act_123/campaigns?${FIELDS}&after=still-there`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}&after=still-there`]: campaigns({
         data: [campaign({ id: "should-not-be-read" })],
         paging: { cursors: { after: "another" } },
       }),
@@ -153,13 +153,13 @@ describe("facebook-marketing connector", () => {
 
   it("reads after from paging.next when the cursors object is missing", async () => {
     const { calls, client } = fake({
-      [`/v26.0/act_123/campaigns?${FIELDS}`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}`]: campaigns({
         data: [campaign({ id: "1" })],
         paging: {
-          next: "https://graph.facebook.test/v26.0/act_123/campaigns?limit=25&after=from-url",
+          next: "https://graph.facebook.test/v27.0/act_123/campaigns?limit=25&after=from-url",
         },
       }),
-      [`/v26.0/act_123/campaigns?${FIELDS}&after=from-url`]: campaigns({
+      [`/v27.0/act_123/campaigns?${FIELDS}&after=from-url`]: campaigns({
         data: [campaign({ id: "2" })],
         paging: {},
       }),
@@ -173,15 +173,15 @@ describe("facebook-marketing connector", () => {
 
     expect(ids).toEqual(["1", "2"]);
     expect(calls.map((call) => call.url)).toEqual([
-      `https://graph.facebook.test/v26.0/act_123/campaigns?${FIELDS}`,
-      `https://graph.facebook.test/v26.0/act_123/campaigns?${FIELDS}&after=from-url`,
+      `https://graph.facebook.test/v27.0/act_123/campaigns?${FIELDS}`,
+      `https://graph.facebook.test/v27.0/act_123/campaigns?${FIELDS}&after=from-url`,
     ]);
   });
 
   it("prefixes ad_account_id with act_ once", async () => {
     const prefixed = fake(
       {
-        [`/v26.0/act_123/campaigns?${FIELDS}`]: campaigns({
+        [`/v27.0/act_123/campaigns?${FIELDS}`]: campaigns({
           data: [campaign()],
           paging: { cursors: {} },
         }),
@@ -195,7 +195,7 @@ describe("facebook-marketing connector", () => {
 
     expect(seen).toEqual([null]);
     expect(prefixed.calls[0]?.url).toBe(
-      `https://graph.facebook.test/v26.0/act_123/campaigns?${FIELDS}`,
+      `https://graph.facebook.test/v27.0/act_123/campaigns?${FIELDS}`,
     );
     expect(prefixed.calls[0]?.url).not.toContain("act_act_");
   });
@@ -208,7 +208,7 @@ describe("facebook-marketing connector", () => {
       return new Response(JSON.stringify({ id: "act_123", name: "Ada" }), { status: 200 });
     }) as typeof fetch;
 
-    for (const api_version of ["v25.0", "v26.0"]) {
+    for (const api_version of ["v25.0", "v26.0", "v27.0"]) {
       const client = new Client(
         { base_url: "https://graph.facebook.test", ad_account_id: "123", api_version },
         { access_token: token },
@@ -221,6 +221,7 @@ describe("facebook-marketing connector", () => {
     expect(seen).toEqual([
       "https://graph.facebook.test/v25.0/act_123",
       "https://graph.facebook.test/v26.0/act_123",
+      "https://graph.facebook.test/v27.0/act_123",
     ]);
   });
 
@@ -232,11 +233,11 @@ describe("facebook-marketing connector", () => {
 
   it("proves the token against the ad account and keeps it out of the url", async () => {
     const { calls, client } = fake({
-      "/v26.0/act_123?fields=id": body(accountSchema, { id: "act_123", name: "Ada" }),
+      "/v27.0/act_123?fields=id": body(accountSchema, { id: "act_123", name: "Ada" }),
     });
 
     expect(await client.check()).toEqual({ ok: true });
-    expect(calls[0]?.url).toBe("https://graph.facebook.test/v26.0/act_123?fields=id");
+    expect(calls[0]?.url).toBe("https://graph.facebook.test/v27.0/act_123?fields=id");
     expect(calls[0]?.headers["authorization"]).toBe(`Bearer ${token}`);
     expect(calls[0]?.url).not.toContain(token);
     expect(calls[0]?.url).not.toContain("access_token");
