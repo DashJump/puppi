@@ -111,7 +111,7 @@ export async function runSourceConformance(
   );
   checks.push(
     await run(
-      "a non-default API version is a path segment of the request, and the default is not",
+      "a non-default API version is a path segment or header value, and the default is not",
       () => versionedRequest(source),
     ),
   );
@@ -236,11 +236,13 @@ class Server {
 }
 
 /**
- * A non-default `api_version` has to be its own segment of the request
- * path, and the default version must not be. Reading the operation path
- * cannot show that: the client may replace a version baked into it.
- * Segment equality, so `v1` does not match `v10`. One listed version has
- * no other request to make.
+ * A non-default `api_version` has to appear as its own path segment or as
+ * a whole header value on the first request from `check()`, and the default
+ * version must not. That request is the sample, not a call through the
+ * operation table. The operation path can still contain the default,
+ * because the client replaces that prefix before it sends. Segment
+ * equality, so `v1` does not match `v10`. One listed version has no other
+ * request to make.
  */
 async function versionedRequest(source: Source): Promise<void> {
   const { apiVersions: versions, defaultApiVersion: fallback } = source.connector;
@@ -257,18 +259,43 @@ async function versionedRequest(source: Source): Promise<void> {
       if (server.calls.length === 0) throw error;
     }
 
-    const url = server.calls[0]?.url;
+    const call = server.calls[0];
 
-    if (!url) throw new Error(`api_version ${JSON.stringify(version)} made no request`);
+    if (!call) throw new Error(`api_version ${JSON.stringify(version)} made no request`);
 
-    const segments = new Set(new URL(url).pathname.split("/").filter((segment) => segment !== ""));
+    if (!carries(call.url, call.headers, version) || carries(call.url, call.headers, fallback)) {
+      const path = new URL(call.url).pathname;
+      const names = [headerCarrying(call.headers, version), headerCarrying(call.headers, fallback)]
+        .filter((name): name is string => name !== undefined)
+        .join(", ");
+      const via = names === "" ? "" : ` via ${names}`;
 
-    if (!segments.has(version) || segments.has(fallback)) {
       throw new Error(
-        `api_version ${JSON.stringify(version)} requested ${url}; that path must contain ${JSON.stringify(version)} and not defaultApiVersion ${JSON.stringify(fallback)}`,
+        `api_version ${JSON.stringify(version)} requested ${path}${via}; that request must carry ${JSON.stringify(version)} as a path segment or header value, and must not carry defaultApiVersion ${JSON.stringify(fallback)}`,
       );
     }
   }
+}
+
+/** `version` is a path segment or a whole header value. `v1` does not match `v10`. */
+function carries(url: string, headers: Headers, version: string): boolean {
+  const segments = new Set(new URL(url).pathname.split("/").filter((segment) => segment !== ""));
+
+  if (segments.has(version)) return true;
+
+  for (const value of headers.values()) {
+    if (value === version) return true;
+  }
+
+  return false;
+}
+
+function headerCarrying(headers: Headers, version: string): string | undefined {
+  for (const [name, value] of headers) {
+    if (value === version) return name;
+  }
+
+  return undefined;
 }
 
 async function apiVersions(source: Source): Promise<void> {
