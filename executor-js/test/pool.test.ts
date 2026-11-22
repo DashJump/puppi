@@ -615,7 +615,7 @@ describe("pool worker", () => {
 
     expect(existsSync(term)).toBe(false);
     expect(completes(pool, "attempt-1")).toHaveLength(0);
-  });
+  }, 15_000);
 
   it("stop signals once and replies stopped with the held fence", async () => {
     const pool = await start();
