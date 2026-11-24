@@ -5,7 +5,7 @@
 ## Install and preview
 
 ```bash
-npm install -g @puppi/cli@0.2.2
+npm install -g @puppi/cli@0.3.0
 puppi init my-pipeline
 cd my-pipeline
 npm install
@@ -50,6 +50,10 @@ puppi rollback core/customer --env prod --to <materialization-id>
 ```
 
 `puppi run --wait --timeout 900 --env prod` stops waiting after 900 seconds. The run keeps going and the command exits 3. `--force` bypasses the staleness gate.
+
+`puppi run cancel <run-id>` cancels a queued or running run and prints `run <run-id> <status>`. A queued run is `cancelled` at once. A running run gets 30 seconds to stop, and the command prints `run <run-id> running, cancel requested`. Running the cancel again while it stops exits 0. Cancelling a run that already finished exits 1.
+
+`puppi run --wait`, `puppi status`, and `puppi rollback` exit 4 when the run is `cancelled`.
 
 ## Build
 
@@ -119,4 +123,4 @@ npm test
 
 `--env <name>` or `PUPPI_ENV` names the environment. `--engine-url` or `PUPPI_ENGINE_URL` names the server. The default in `puppi help` is `https://app.puppi.dev`. `puppi login` stores a per-user key at `~/.config/puppi/config.json` (mode `0600`). That key is sent only to the origin it was saved for. `puppi logout` revokes the stored key and deletes the file.
 
-Exit codes: `0` finished, `2` usage, `1` the engine refused or the run did not succeed, `3` `puppi run --wait --timeout` returned while the run was still going.
+Exit codes: `0` finished, `1` the engine refused or the run did not succeed, `2` usage, `3` `puppi run --wait --timeout` returned while the run was still going, `4` the run was cancelled.

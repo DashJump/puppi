@@ -72,6 +72,15 @@ describe("executor protocol v2 envelopes", () => {
       validate({ message: "settled", attempt_id: execution.attempt_id, fence: 1, fenced: true }),
       JSON.stringify(validate.errors),
     ).toBe(true);
+    expect(
+      validate({
+        message: "settled",
+        attempt_id: execution.attempt_id,
+        fence: 1,
+        reason: "cancelled",
+      }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
   });
 
   it("leases one complete attempt", () => {

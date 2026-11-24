@@ -664,6 +664,10 @@
         "fenced": {
           "description": "In-flight event ack. true stops the child before another write. The end of the attempt uses outcome instead.",
           "type": "boolean"
+        },
+        "reason": {
+          "description": "Set when the attempt is cancelling. The worker writes {\"abort\":true} to the child and waits up to 30 seconds for it to exit. The frame has no fenced and no outcome.",
+          "const": "cancelled"
         }
       },
       "required": ["message", "attempt_id", "fence"],
@@ -673,6 +677,9 @@
         },
         {
           "required": ["fenced"]
+        },
+        {
+          "required": ["reason"]
         }
       ],
       "additionalProperties": false
