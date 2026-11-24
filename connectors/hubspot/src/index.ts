@@ -1,8 +1,6 @@
 /**
  * `@puppi/adapter-hubspot`: a source connector over the HubSpot CRM contacts API.
- * Auth is a bearer access token. The CRM version is a prefix of the base URL
- * (`/crm/<version>`), from `api_version` or the default in `define.ts`.
- * `contacts()` walks the list.
+ * Auth is a bearer access token. `contacts()` walks the list.
  */
 
 import {
@@ -16,7 +14,7 @@ import {
 } from "@puppi/sdk";
 
 import connector from "./define.js";
-import type { SchemaContact as Contact } from "./openapi.js";
+import type { SchemaSimplePublicObjectWithAssociations as Contact } from "./openapi.js";
 import { type Api, operations } from "./operations.js";
 
 export type { Contact };
@@ -25,6 +23,8 @@ export default connector;
 
 const auth = connector.auth;
 const defaultBaseUrl = connector.defaultBaseUrl;
+const listContacts =
+  "get-/crm/objects/2026-09/contacts_/crm/objects/2026-09-beta/{objectType}" as const;
 
 export class Client extends OpenApiClient<Api> {
   constructor(
@@ -32,16 +32,22 @@ export class Client extends OpenApiClient<Api> {
     secrets: Record<string, string> = {},
     options: ClientOptions = {},
   ) {
-    const [defaults, openApi] = openApiClientOptions(connector, config, secrets, operations, {
-      baseUrl: (version) => baseUrl(config, version),
-    });
+    const published = operations[listContacts];
+    // The published path includes `2026-09`. `v3` puts the version on the other side of `objects`, so this client supplies the prefix.
+    const [defaults, openApi] = openApiClientOptions(
+      connector,
+      config,
+      secrets,
+      { ...operations, [listContacts]: { ...published, path: "/contacts" } },
+      { baseUrl: (version) => baseUrl(config, version) },
+    );
 
     super({ ...config, base_url: defaults.baseUrl }, options, defaults, openApi);
   }
 
-  /** `GET /crm/<version>/objects/contacts?limit=1` proves `access_token`. */
+  /** `GET /contacts?limit=1` on the versioned CRM base proves `access_token`. */
   override check(): Promise<CredentialCheck> {
-    return this.prove("/objects/contacts?limit=1", auth.secret);
+    return this.prove("/contacts?limit=1", auth.secret);
   }
 
   /**
@@ -51,7 +57,7 @@ export class Client extends OpenApiClient<Api> {
   @read
   contacts(args: { limit?: number; cursor?: PageArgs["cursor"] } = {}) {
     return this.pages<Contact>(
-      "listContacts",
+      listContacts,
       {
         rows: "results",
         next: "paging.next.after",
@@ -62,12 +68,17 @@ export class Client extends OpenApiClient<Api> {
   }
 }
 
-/** CRM host plus `/crm/<version>`. `base_url` replaces the host. */
+/** A `YYYY-MM` version follows `objects`. A numbered version precedes it. `base_url` replaces the host. */
 function baseUrl(config: Record<string, unknown>, version: string): string {
   const override = config["base_url"];
   const host = typeof override === "string" && override !== "" ? override : defaultBaseUrl;
 
   if (typeof host !== "string" || host === "") throw new Error("hubspot requires base_url");
 
-  return `${trimSlash(host)}/crm/${version}`;
+  const root = trimSlash(host);
+  const prefix = /^\d{4}-\d{2}$/.test(version)
+    ? `/crm/objects/${version}`
+    : `/crm/${version}/objects`;
+
+  return `${root}${prefix}`;
 }
