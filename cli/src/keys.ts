@@ -26,32 +26,33 @@ import { type Command, type Outcome, done, helpBlock } from "./command.js";
 import { err, out } from "./print.js";
 
 /**
- * Printed when this command leaves a row with no signature. A row that
- * keeps the signature it already has does not get this line. Exit stays 0.
- * A re-bind that would change a signed config exits 2 without this line.
+ * The CLI prints this for an unsigned row when the executor is neither
+ * hosted nor remote. The command exits 0.
  */
 const UNSIGNED_WARNING =
   "NOT SIGNED. A worker with trusted keys will refuse this. " +
   "Set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
 
 /**
- * A remote worker with trusted keys refuses an unsigned row. A local
- * executor does not check signatures, and neither does `hosted`. Any other
- * value keeps `NOT SIGNED`, because hiding that line without knowing the
- * executor is the wrong default.
+ * The CLI prints this for an unsigned row on a remote executor. A remote
+ * worker checks signatures.
  */
-export function skipsSignatureCheck(executor: string | undefined): executor is "local" | "hosted" {
-  return executor === "local" || executor === "hosted";
+const REMOTE_UNSIGNED =
+  "A remote worker with trusted keys will refuse this unsigned row until you set PUPPI_SIGNING_KEY, --signing-key, PUPPI_SIGNING_KEY_FILE, or puppi-signing-key.";
+
+/**
+ * Hosted workers do not check signatures. The CLI skips the unsigned warning
+ * and the key comparison for a hosted executor.
+ */
+export function skipsSignatureCheck(executor: string | undefined): executor is "hosted" {
+  return executor === "hosted";
 }
 
 export function warnUnsigned(executor?: string): void {
-  // stderr, same as NOT SIGNED. `env create --json` and `env bind --json`
-  // print the object on stdout, and a line in front of it is not JSON.
-  err(
-    skipsSignatureCheck(executor)
-      ? `unsigned. A ${executor} executor does not check signatures.`
-      : UNSIGNED_WARNING,
-  );
+  if (skipsSignatureCheck(executor)) return;
+
+  // The CLI prints this on stderr so `env create --json` and `env bind --json` stay JSON on stdout.
+  err(executor === "remote" ? REMOTE_UNSIGNED : UNSIGNED_WARNING);
 }
 
 /** Where `puppi keys create` writes the seed when `--out` is not given. */
