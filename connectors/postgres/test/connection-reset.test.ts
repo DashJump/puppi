@@ -51,7 +51,6 @@ describe("a connection reset during write", () => {
       await holder.query(`lock table ${SCHEMA}.t`);
 
       const writing = adapter.write(`${SCHEMA}.t`, [{ id: 1, note: "kept" }]);
-      // The session that holds the lock does not see the waiting backend.
       const pid = await waitingBackend(observer);
 
       await observer.query("select pg_terminate_backend($1)", [pid]);
@@ -72,16 +71,30 @@ describe("a connection reset during write", () => {
   }, 15_000);
 });
 
+/**
+ * The backend waiting to lock `reset_test.t`.
+ *
+ * Other test files share this database and run `drop table if exists` at
+ * the same time. `pg_terminate_backend` on one of those ends that file's
+ * connection. The ungranted relation lock belongs to this write.
+ */
 async function waitingBackend(observer: Client): Promise<number> {
   const started = Date.now();
 
   while (Date.now() - started < 5_000) {
     const found = await observer.query<{ pid: number }>(
-      `select pid from pg_stat_activity
-       where datname = current_database()
-         and pid <> pg_backend_pid()
-         and query ilike '%drop table if exists%'
-         and state = 'active'`,
+      `select distinct a.pid
+       from pg_stat_activity a
+       join pg_locks l on l.pid = a.pid
+       join pg_class c on c.oid = l.relation
+       join pg_namespace n on n.oid = c.relnamespace
+       where a.datname = current_database()
+         and a.pid <> pg_backend_pid()
+         and l.locktype = 'relation'
+         and n.nspname = $1
+         and c.relname = $2
+         and not l.granted`,
+      [SCHEMA, "t"],
     );
     const pid = found.rows[0]?.pid;
 
