@@ -72,7 +72,7 @@ describe("a connection reset during write", () => {
 });
 
 /**
- * The backend waiting to lock `reset_test.t`.
+ * waitingBackend returns the pid of the backend waiting to lock `reset_test.t`.
  *
  * Other test files share this database and run `drop table if exists` at
  * the same time. `pg_terminate_backend` on one of those ends that file's
