@@ -668,14 +668,15 @@ export function chunk<T>(items: T[], size: number): T[][] {
  * How a connector authenticates. The secret values come from the binding.
  * An empty token, key, username, or password sends nothing: a missing
  * secret fails as a 401 from the API, which names the status, rather than
- * as a header of `Bearer ` or `Basic `.
+ * as a header of `Bearer ` or `Basic `. Omitting `password` sends
+ * `username:`.
  */
 export type HttpAuth =
   | { scheme: "none" }
   | { scheme: "bearer"; token: string }
   | { scheme: "api_key_header"; header: string; key: string }
   | { scheme: "api_key_query"; parameter: string; key: string }
-  | { scheme: "basic"; username: string; password: string };
+  | { scheme: "basic"; username: string; password?: string };
 
 /** The headers for `auth`. Query-parameter schemes contribute no header. */
 export function authHeaders(auth: HttpAuth): Record<string, string> {
@@ -687,10 +688,13 @@ export function authHeaders(auth: HttpAuth): Record<string, string> {
       return auth.token === "" ? {} : { authorization: `Bearer ${auth.token}` };
     case "api_key_header":
       return auth.key === "" ? {} : { [auth.header]: auth.key };
-    case "basic":
-      return auth.username === "" || auth.password === ""
-        ? {}
-        : { authorization: `Basic ${btoa(`${auth.username}:${auth.password}`)}` };
+    case "basic": {
+      if (auth.username === "" || auth.password === "") return {};
+
+      return {
+        authorization: `Basic ${btoa(`${auth.username}:${auth.password ?? ""}`)}`,
+      };
+    }
   }
 }
 

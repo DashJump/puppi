@@ -166,7 +166,8 @@ class Source {
 
   /**
    * Config and secrets passed to the client. A basic username in
-   * `configSchema` is config; any other basic username is a second secret.
+   * `configSchema` is config. Any other username is a secret: a second
+   * secret when a password is named, and the only secret when it is not.
    */
   binding(config: Record<string, unknown> = {}): {
     config: Record<string, unknown>;
@@ -187,7 +188,9 @@ class Source {
       return { config: { ...merged, [auth.username]: username }, secrets };
     }
 
-    return { config: merged, secrets: { ...secrets, [auth.username]: BASIC_USER } };
+    const username = auth.secret ? BASIC_USER : SECRET;
+
+    return { config: merged, secrets: { ...secrets, [auth.username]: username } };
   }
 
   /**
@@ -342,11 +345,11 @@ function assertSecretNotInUrl(url: string, source: Source): void {
   const forbidden = [SECRET];
 
   if (auth.scheme === "basic") {
-    const encoded = btoa(`${basicUsername(source)}:${SECRET}`);
+    const password = auth.secret ? SECRET : "";
 
-    forbidden.push(encoded);
+    forbidden.push(btoa(`${basicUsername(source)}:${password}`));
 
-    if (auth.username && !(auth.username in source.connector.configSchema)) {
+    if (auth.secret && auth.username && !(auth.username in source.connector.configSchema)) {
       forbidden.push(BASIC_USER);
     }
   }
@@ -359,8 +362,9 @@ function assertSecretNotInUrl(url: string, source: Source): void {
 /**
  * The header value the scheme requires. Bearer is `Authorization: Bearer`
  * and the secret. An API key header is that header set to the secret.
- * Basic is `Authorization: Basic` of `username:secret`, with `usernameSuffix`
- * appended when the username does not already end with it.
+ * Basic is `Authorization: Basic` of `username:secret`, or `username:` when
+ * basic names no password. `usernameSuffix` is appended when the username
+ * does not already end with it.
  */
 function assertSchemeHeader(headers: Headers, source: Source): void {
   const auth = source.connector.auth;
@@ -373,7 +377,11 @@ function assertSchemeHeader(headers: Headers, source: Source): void {
       expectHeader(headers, auth.header ?? "", SECRET);
       return;
     case "basic":
-      expectHeader(headers, "authorization", `Basic ${btoa(`${basicUsername(source)}:${SECRET}`)}`);
+      expectHeader(
+        headers,
+        "authorization",
+        `Basic ${btoa(`${basicUsername(source)}:${auth.secret ? SECRET : ""}`)}`,
+      );
       return;
     default:
       throw new Error(`scheme ${auth.scheme} has no credential check`);
@@ -408,7 +416,9 @@ async function runCredential(
   name: string,
   body: () => Promise<void>,
 ): Promise<ConformanceCheck> {
-  if (!connector.auth.secret) return skipped(name, "no auth secret");
+  if (secretFieldsFor(connector.auth, connector.configSchema).length === 0) {
+    return skipped(name, "no auth secret");
+  }
   if (connector.auth.scheme === "api_key_query") return skipped(name, QUERY_SKIP);
 
   return run(name, body);
@@ -429,7 +439,8 @@ async function userAgent(source: Source): Promise<void> {
 }
 
 async function checkRefusals(source: Source): Promise<void> {
-  const secret = source.connector.auth?.secret ?? "";
+  const named = source.connector.auth;
+  const secret = named.secret ?? (named.scheme === "basic" ? named.username : undefined) ?? "";
 
   for (const [status, reason] of [
     [401, "authentication"],
@@ -575,7 +586,9 @@ function assertAuth(auth: unknown): void {
 
   if (auth["scheme"] === "none") return;
 
-  assertText(auth["secret"], "auth.secret is missing");
+  if (auth["scheme"] !== "basic" || auth["secret"] !== undefined) {
+    assertText(auth["secret"], "auth.secret is missing");
+  }
   assertSchemeDetail(auth, "api_key_header", "header");
   assertSchemeDetail(auth, "api_key_query", "parameter");
   assertSchemeDetail(auth, "basic", "username");
