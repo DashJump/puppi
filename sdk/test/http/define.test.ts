@@ -19,5 +19,9 @@ describe("secretFieldsFor", () => {
     expect(
       secretFieldsFor({ scheme: "basic", username: "email", secret: "api_token" }, {}),
     ).toEqual(["email", "api_token"]);
+    expect(secretFieldsFor({ scheme: "basic", username: "api_key" }, {})).toEqual(["api_key"]);
+    expect(secretFieldsFor({ scheme: "basic", username: "email" }, { email: "string" })).toEqual(
+      [],
+    );
   });
 });

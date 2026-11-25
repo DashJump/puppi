@@ -370,12 +370,13 @@ function httpAuth(
         parameter: auth.parameter,
         key: secrets[auth.secret] ?? "",
       };
-    case "basic":
-      return {
-        scheme: "basic",
-        username: basicUsername(definition, config, secrets, auth),
-        password: secrets[auth.secret] ?? "",
-      };
+    case "basic": {
+      const username = basicUsername(definition, config, secrets, auth);
+
+      if (!auth.secret) return { scheme: "basic", username };
+
+      return { scheme: "basic", username, password: secrets[auth.secret] ?? "" };
+    }
   }
 }
 

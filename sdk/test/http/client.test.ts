@@ -997,6 +997,17 @@ describe("auth", () => {
     });
   });
 
+  it("sends user: when basic omits the password, and nothing when a named password is empty", () => {
+    expect(authHeaders({ scheme: "basic", username: "ada" })).toEqual({
+      authorization: `Basic ${btoa("ada:")}`,
+    });
+    expect(authHeaders({ scheme: "basic", username: "ada", password: "secret" })).toEqual({
+      authorization: `Basic ${btoa("ada:secret")}`,
+    });
+    expect(authHeaders({ scheme: "basic", username: "ada", password: "" })).toEqual({});
+    expect(authHeaders({ scheme: "basic", username: "", password: "secret" })).toEqual({});
+  });
+
   it("sends nothing for an empty secret or a query-parameter scheme", () => {
     expect(authHeaders({ scheme: "bearer", token: "" })).toEqual({});
     expect(authHeaders({ scheme: "basic", username: "", password: "secret" })).toEqual({});

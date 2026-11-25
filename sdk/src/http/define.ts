@@ -10,8 +10,10 @@ export type ConfigValue = "string" | "integer" | "boolean" | "json";
  * How the client authenticates. A secret name is a binding field.
  * `scheme: "none"` is a public API. `scheme: "client"` means the client
  * applies its own credentials from `secretFields`. `basic` reads a username
- * and a password: the password is always `secret`, and the username is
- * config when its name is in `configSchema`, otherwise a second secret.
+ * and a password. `secret` is the password. Omit `secret` when the password
+ * is empty: `username` is then the only secret, unless its name is in
+ * `configSchema`. A named `secret` keeps the username as config when that
+ * name is in `configSchema`, and as a second secret otherwise.
  * `usernameSuffix` is appended to that username (Zendesk's `/token`).
  */
 export type ConnectorAuth =
@@ -21,7 +23,7 @@ export type ConnectorAuth =
   | {
       readonly scheme: "basic";
       readonly username: string;
-      readonly secret: string;
+      readonly secret?: string;
       readonly usernameSuffix?: string;
     }
   | { readonly scheme: "client" }
@@ -31,15 +33,22 @@ export type ConnectorAuth =
  * The secret names `auth` reads, in the order `secretFields` must list them.
  * `none` and `client` are `[]`: `client` does not name a secret, and the
  * connector lists `secretFields` itself. Bearer, API key header, and API key
- * query are `[auth.secret]`. Basic is `[auth.secret]` when `username` is a
- * config field, and `[auth.username, auth.secret]` when the username is a
- * secret (its name is not in `configSchema`).
+ * query are `[auth.secret]`. Basic with no `secret` is `[auth.username]`
+ * when the username is a secret, and `[]` when it is config. Basic with a
+ * `secret` is `[auth.secret]` when `username` is config, and
+ * `[auth.username, auth.secret]` when the username is a secret.
  */
 export function secretFieldsFor(
   auth: { readonly scheme: string; readonly secret?: string; readonly username?: string },
   configSchema: Readonly<Record<string, string>>,
 ): readonly string[] {
-  if (auth.scheme === "none" || auth.scheme === "client" || !auth.secret) return [];
+  if (auth.scheme === "none" || auth.scheme === "client") return [];
+
+  if (auth.scheme === "basic" && auth.username && !auth.secret) {
+    return auth.username in configSchema ? [] : [auth.username];
+  }
+
+  if (!auth.secret) return [];
 
   if (auth.scheme === "basic" && auth.username && !(auth.username in configSchema)) {
     return [auth.username, auth.secret];

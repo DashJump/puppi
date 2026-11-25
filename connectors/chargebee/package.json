@@ -1,0 +1,51 @@
+{
+  "name": "@puppi/adapter-chargebee",
+  "version": "0.1.0",
+  "description": "Source connector for Chargebee Product Catalog 2.0: API key as HTTP basic username, offset pages of customers, subscriptions, invoices, and items.",
+  "homepage": "https://github.com/DashJump/puppi",
+  "bugs": {
+    "url": "https://github.com/DashJump/puppi/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashJump/puppi.git",
+    "directory": "connectors/chargebee"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/openapi.ts --export-type --root-types --empty-objects-unknown --default-non-nullable=false && puppi-write-operations openapi.json src/operations.ts && vp fmt --write src/openapi.ts src/operations.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "vp test run --config ../../vite.config.ts"
+  },
+  "dependencies": {
+    "@puppi/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@puppi/conformance": "workspace:*",
+    "@types/node": "^26.6.5",
+    "openapi-sampler": "1.7.4",
+    "openapi-typescript": "7.13.0",
+    "typescript": "^5.6.3",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}
