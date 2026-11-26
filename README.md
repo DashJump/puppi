@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/puppi-logo.svg" alt="Puppi" width="112"></p>
+
 # Puppi
 
 Puppi runs TypeScript data pipelines that bring data from the tools you use into your app, and checks every result before it goes live. Your pipelines live in your repo, your AI agent can write them, and you ship them like the rest of your app. This repo holds the SDK, CLI, executor-js, adapters and connectors, under Apache-2.0.
