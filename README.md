@@ -1,6 +1,8 @@
+<p align="center"><img src=".github/assets/puppi-logo.svg" alt="Puppi" width="112"></p>
+
 # Puppi
 
-Puppi runs data pipelines you write in TypeScript. The CLI builds a project, deploys it, and starts a run.
+Puppi runs TypeScript data pipelines that bring data from the tools you use into your app, and checks every result before it goes live. Your pipelines live in your repo, your AI agent can write them, and you ship them like the rest of your app. This repo holds the SDK, CLI, executor-js, adapters and connectors, under Apache-2.0.
 
 You need Node.js 26 or newer.
 
@@ -50,4 +52,4 @@ npm install -g @puppi/cli@0.3.0
 
    `puppi run` triggers the whole graph and prints the run id. `puppi status` prints the last run, per attempt.
 
-The guide is <https://puppi.dev/docs/quickstart/>.
+The guide is <https://puppi.dev/docs/quickstart>.
